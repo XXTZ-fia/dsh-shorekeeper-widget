@@ -1,0 +1,45 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '已存在的 tag（如 v1.0.0）'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 自检
+        run: node tools/check.mjs
+
+      - name: 打包
+        run: node tools/pack-release.mjs
+
+      - name: 创建 / 更新 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.zip dist/*.sha256 --clobber
+          else
+            gh release create "$TAG" dist/*.zip dist/*.sha256 \
+              --title "$TAG 守岸人挂件" \
+              --generate-notes
+          fi

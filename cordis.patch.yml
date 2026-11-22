@@ -1,0 +1,18 @@
+# ============================================================================
+# dsh-shorekeeper-widget —— DSH bundle patch
+# ============================================================================
+# 这是插件的「挂载声明」。DSH 启动时按 bundle 层栈叠加各插件 patch，
+# 本文件会把守岸人挂件插入 profile 的配置树。
+#
+# 安装（桌面端与 Web/CLI 都适用，二选一）：
+#   dsh plugin add dsh-shorekeeper-widget                # 从 npm / 本地包
+#   dsh plugin add github:XXTZ-fia/dsh-shorekeeper-widget # 直接从 GitHub
+# 本地开发安装：
+#   dsh plugin add link:<本目录绝对路径>
+#
+# 注意：name 必须与 package.json 的 name 完全一致（Loader 按包名解析这一行）。
+# ============================================================================
+
+- insert:
+    - id: dsh-shorekeeper-widget
+      name: dsh-shorekeeper-widget
