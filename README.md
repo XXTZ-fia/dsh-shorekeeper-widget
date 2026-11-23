@@ -75,12 +75,22 @@
 
 ## 二、安装
 
-> 先分清你的 DSH 形态：
->
-> | 形态 | profile | 怎么装 |
-> |---|---|---|
-> | 官方**桌面客户端**（Electron） | `desktop` | **只能**用客户端内的插件页 / `plugin_manager`，命令行装不进去 |
-> | `dsh web` / CLI | `web` | 用 `dsh plugin --profile web add …` |
+> 仓库是**公开**的，所以 `dsh web` 可以直接从 GitHub 装；桌面客户端因为 profile 由 Electron 独占，
+> 走「下载发布包 → Plugins → Add plugin」这条路。
+
+| 形态 | profile | 怎么装 |
+|---|---|---|
+| 官方**桌面客户端**（Electron） | `desktop` | **只能**用客户端内的插件页 / `plugin_manager`，命令行装不进去 |
+| `dsh web` / CLI | `web` | `dsh plugin --profile web add github:XXTZ-fia/dsh-shorekeeper-widget` |
+
+### 快速安装（`dsh web` / CLI）
+
+```powershell
+dsh plugin --profile web add github:XXTZ-fia/dsh-shorekeeper-widget
+```
+
+装完重启 `dsh web`，浏览器 `Ctrl+F5`。就这一步，不需要先 clone。
+（需要本机能访问 GitHub；有代理时先设 `HTTPS_PROXY` / `HTTP_PROXY`。）
 
 ### A. 官方桌面客户端（推荐路径）
 
@@ -89,8 +99,10 @@
 
 **A1. 在客户端界面里装**
 
-1. 把本仓库的发布包 `dsh-shorekeeper-widget-v1.0.0.zip`（Releases 页）解压到本地一个**以后不会移动或删除**的目录
-   （例如 `D:\Plugins\dsh-shorekeeper-widget`）。要安装的是「包含 `package.json` 的那一层」，不要多套一层同名目录。
+1. 到 [Releases](https://github.com/XXTZ-fia/dsh-shorekeeper-widget/releases/latest) 下载
+   `dsh-shorekeeper-widget-v1.0.0.zip`，解压到一个**以后不会移动或删除**的目录
+   （例如 `D:\Plugins\dsh-shorekeeper-widget`）。要安装的是「包含 `package.json` 的那一层」，
+   不要多套一层同名目录。也可以直接 `git clone` 仓库，效果一样。
 2. 打开 DSH 桌面客户端 → 左侧 **Plugins（插件）** → **Add plugin（添加插件）** → 选择上面的目录。
 3. 装完**完全退出**客户端（含系统托盘）再重新打开。
 
@@ -103,15 +115,12 @@
 
 ### B. Web / CLI（`dsh web`）
 
-> 本仓库默认是**私有**的：`github:` 直装只有在「仓库已公开」或「本机 git 已保存对该仓库的凭据」时才会成功。
-> 私有仓库最稳的做法是先把发布包解压到固定目录，再用 `link:` 安装。
-
 ```powershell
-# 私有仓库：解压发布包后，用本地目录安装（推荐）
-dsh plugin --profile web add link:D:\Plugins\dsh-shorekeeper-widget
-
-# 仓库公开后（或本机已配置凭据）可以直接从 GitHub 装
+# 直接从 GitHub 装（推荐）
 dsh plugin --profile web add github:XXTZ-fia/dsh-shorekeeper-widget
+
+# 或先下载发布包解压到固定目录，再用本地目录装（离线 / 代理不稳时用这个）
+dsh plugin --profile web add link:D:\Plugins\dsh-shorekeeper-widget
 
 # 已发布到 npm 时
 dsh plugin --profile web add dsh-shorekeeper-widget

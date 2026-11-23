@@ -15,8 +15,8 @@
   auto（默认）| desktop | web
 
 .PARAMETER Source
-  web 模式下的安装来源：local（默认，用本目录 link 安装）| github | npm
-  仓库默认是私有的，github: 直装需要本机 git 已保存对该仓库的凭据；不动网络时用 local 最稳。
+  web 模式下的安装来源：github（默认，直接从公开仓库装）| local（用本目录 link 安装）| npm
+  网络不稳或想固定版本的目录时用 local。
 
 .PARAMETER Path
   本地插件包目录（含 package.json 的那一层）。默认脚本所在目录。
@@ -44,7 +44,7 @@ param(
   [ValidateSet('auto', 'desktop', 'web')]
   [string]$Mode = 'auto',
   [ValidateSet('github', 'local', 'npm')]
-  [string]$Source = 'local',
+  [string]$Source = 'github',
   [string]$Path = '',
   [string]$Repo = 'XXTZ-fia/dsh-shorekeeper-widget',
   [string]$Profile = 'web',
