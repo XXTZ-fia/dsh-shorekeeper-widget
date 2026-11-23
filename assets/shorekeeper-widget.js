@@ -2,6 +2,73 @@
 if (window.__skShorekeeperWidget) return
 window.__skShorekeeperWidget = true
 
+// ===== v1.2.1：启动黑幕（IIFE 级，先于一切挂件逻辑执行）=====
+// 挂件要等「主界面判定 + 配置加载」才播动画，这段空窗里应用已经画出来了。
+// 宿主会在 <head> 里内联一段更早的脚本先盖一层（桌面端是最前面的一条注入行），
+// 这里的职责是：认领宿主已经盖好的那层；宿主没盖（比如老版本注入表）再自己补一层；
+// 判定完成（播放 / 让位 / 关闭 / 超时）时撤掉它。只依赖 DOM + 存储。
+var skdwBootVeilEl = null
+var skdwBootVeilTimer = 0
+var skdwBootVeilWatch = 0
+function skdwBootVeilHide() {
+  try {
+    if (skdwBootVeilTimer) { clearTimeout(skdwBootVeilTimer); skdwBootVeilTimer = 0 }
+    if (skdwBootVeilWatch) { clearInterval(skdwBootVeilWatch); skdwBootVeilWatch = 0 }
+    var el = skdwBootVeilEl
+    skdwBootVeilEl = null
+    try { window.__skdwBootVeil = null } catch (e0) {}
+    if (!el) return
+    el.style.opacity = '0'
+    setTimeout(function () { try { if (el.parentNode) el.parentNode.removeChild(el) } catch (err) {} }, 460)
+  } catch (err) {}
+}
+function skdwBootVeilWatchdog() {
+  skdwBootVeilTimer = setTimeout(skdwBootVeilHide, 8000)
+  var t0 = Date.now()
+  skdwBootVeilWatch = setInterval(function () {
+    try {
+      if (!skdwBootVeilEl) { clearInterval(skdwBootVeilWatch); skdwBootVeilWatch = 0; return }
+      if (Date.now() - t0 <= 1200) return
+      // 1.2 秒还没出现输入框（插件市场等非聊天页）→ 撤掉，别挡住别的页面
+      var hasComposer = !!document.querySelector('[data-composer-input], [data-composer-seat], textarea, [contenteditable="true"]')
+      if (!hasComposer) skdwBootVeilHide()
+    } catch (err) {}
+  }, 200)
+}
+function skdwBootVeilShow() {
+  try {
+    if (skdwBootVeilEl) return
+    // 宿主已经盖好了 → 认领它，别叠第二层
+    var existing = null
+    try { existing = window.__skdwBootVeil || null } catch (e0) {}
+    if (!existing) {
+      try { existing = document.getElementById('skdw-boot-veil') } catch (e1) {}
+    }
+    if (existing && existing.parentNode) {
+      skdwBootVeilEl = existing
+      skdwBootVeilWatchdog()
+      return
+    }
+    if (!document.body) return
+    var seen = false
+    try { seen = sessionStorage.getItem('skdw-intro-seen') === '1' } catch (err) {}
+    if (seen) return
+    var enabled = '1'
+    try { enabled = localStorage.getItem('skdw-intro-enabled') || '1' } catch (err) {}
+    if (enabled === '0') return
+    try { if (document.querySelector('.dshsk-root, .dshsk-boot-veil')) return } catch (err) {}
+    var el = document.createElement('div')
+    el.id = 'skdw-boot-veil'
+    el.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:#02040a;opacity:1;'
+      + 'transition:opacity .46s ease;pointer-events:auto'
+    document.body.appendChild(el)
+    skdwBootVeilEl = el
+    try { window.__skdwBootVeil = el } catch (e2) {}
+    skdwBootVeilWatchdog()
+  } catch (err) {}
+}
+try { skdwBootVeilShow() } catch (err) {}
+
 // —— 页面自检：只在 DSH 主聊天界面挂载挂件 ——
 // 挂件脚本通过 tapIndex 注入 DSH 的每一个 index 页面（含插件市场等 SPA 视图）。
 // 市场页用 ReactDOM.createPortal 渲染到 document.body，若挂件在此初始化，
@@ -19205,9 +19272,9 @@ function skdwIntroMaybe(force) {
   try {
     if (skdwIntroEl) return
     if (!force) {
-      if (introOn === false) return
-      if (skdwIntroSeen()) return
-      if (skdwIntroOtherSplash()) return // 让位给主题插件
+      if (introOn === false) { skdwBootVeilHide(); return }
+      if (skdwIntroSeen()) { skdwBootVeilHide(); return }
+      if (skdwIntroOtherSplash()) { skdwBootVeilHide(); return } // 让位给主题插件
     }
     skdwIntroMarkSeen()
     skdwIntroPlay({})
@@ -19669,6 +19736,8 @@ function skdwSplashBuild(data, opts) {
     skdwBodyAppend(rootEl)
     skdwIntroEl = rootEl
     skdwIntroVideo = video
+    // 黑幕交棒给动画（动画的底也是 #02040a，视觉上无缝）
+    skdwBootVeilHide()
 
     var closing = false
     var phase = 'intro'
@@ -19693,6 +19762,21 @@ function skdwSplashBuild(data, opts) {
       skdwIntroCleanup = null
     }
 
+    // 手动补间淡出：CSS 的 `animation ... both` 会一直占着 opacity，
+    // 只改 class 的话「撤动画 + 置 0」在同一次样式重算里发生，浏览器直接跳到 0（没有过渡）。
+    function fadeOut(dur) {
+      try {
+        rootEl.style.animation = 'none'
+        var t0 = performance.now()
+        function ramp() {
+          var k = Math.min(1, (performance.now() - t0) / dur)
+          rootEl.style.opacity = String(1 - k)
+          if (k < 1) requestAnimationFrame(ramp)
+        }
+        ramp()
+      } catch (err) {}
+    }
+
     function end(immediate) {
       if (closing) return
       closing = true
@@ -19702,16 +19786,16 @@ function skdwSplashBuild(data, opts) {
       }
       rootEl.setAttribute('data-closing', 'true')
       try { video.pause() } catch (err) {}
-      // 主题插件退场时背后是循环背景，我们背后是应用界面 —— 粒子散尽后整层淡出，避免闪白
-      if (!immediate) {
-        skdwIntroTimers.push(setTimeout(function () {
-          try { rootEl.setAttribute('data-fading', 'true') } catch (err) {}
-        }, 1120))
+      // 主题插件退场时背后是循环背景，我们背后是应用界面 —— 粒子散尽后整层淡出，避免闪白。
+      // 淡出要等粒子「先散后聚」基本走完（约 1.2s），再用 0.9s 把界面渐显出来。
+      if (immediate) fadeOut(380)
+      else {
+        skdwIntroTimers.push(setTimeout(function () { fadeOut(900) }, 1250))
       }
       skdwIntroTimers.push(setTimeout(function () {
         cleanup()
         try { skdwBodyDetach(rootEl) } catch (err) {}
-      }, immediate ? 380 : 1750))
+      }, immediate ? 620 : 2300))
     }
 
     function tick() {
@@ -19839,9 +19923,10 @@ function skfDissolve(canvas, video) {
   } catch (err) {}
 }
 
+
 function skdwIntroPlay(opts) {
   try {
-    if (skdwIntroEl) return
+    if (skdwIntroEl) { skdwBootVeilHide(); return }
     var o = opts || {}
     if (skfData) { skdwSplashBuild(skfData, o); return }
     skfLoadData().then(function (d) { skdwSplashBuild(d, o) }).catch(function () {
@@ -22905,6 +22990,8 @@ function sizeCfgApply(d) {
     if (d && typeof d.introText === 'boolean') introText = d.introText !== false
     if (d && typeof d.introMs === 'number') introMs = d.introMs
     if (d && typeof d.introStyle === 'string') introStyle = d.introStyle
+    // 记住开关，供下次启动时决定要不要先盖黑幕（黑幕在配置加载前就要决定）
+    try { localStorage.setItem('skdw-intro-enabled', introOn === false ? '0' : '1') } catch (err) {}
     // 无论服务端带没带这个键都要应用一次：触屏上 ☰ 需要常显（issue #91 缺陷2），
     // 而旧写法只在键存在时才调用，空配置下按钮永远是透明的。
     applyMenuBtnHideUI()

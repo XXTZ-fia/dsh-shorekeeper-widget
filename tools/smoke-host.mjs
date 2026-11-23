@@ -20,6 +20,7 @@ fs.writeFileSync(path.join(tmp, 'whale-roles', 'roles.json'), JSON.stringify({ v
 
 const routes = []
 const injections = []
+const indexTaps = []
 const cleanups = []
 
 const webServer = {
@@ -28,7 +29,7 @@ const webServer = {
     return () => {}
   },
   tapIndex(fn) {
-    injections.push(fn)
+    indexTaps.push(fn)
     return () => {}
   },
 }
@@ -208,6 +209,21 @@ check('GET rua.gif 200（用 petpet 回退）', r.statusCode === 200, String(r.s
 // 7) 注入行存在
 const table = injections.find((x) => Array.isArray(x))
 check('注册了桌面端注入行', !!table && JSON.stringify(table).includes('/dsh-shorekeeper/widget.js'))
+check('桌面端注入行里带启动黑幕', !!table && JSON.stringify(table).includes('skdw-boot-veil'))
+if (Array.isArray(table)) {
+  check('黑幕行排在挂件行之前', String(table[0] && table[0].text || '').includes('skdw-boot-veil'))
+}
+
+// 7b) web 侧 tapIndex：黑幕要内联进 <head>，widget.js 仍挂在 </body> 前，且幂等
+if (indexTaps.length) {
+  const sample = '<!doctype html><html><head><meta charset="utf-8"><title>t</title></head><body><div id="root"></div></body></html>'
+  let out = sample
+  for (const fn of indexTaps) out = fn(out) || out
+  check('tapIndex 把黑幕注入到 <head> 之后', /<head[^>]*><script>[^<]*skdw-boot-veil/.test(out), out.slice(0, 120))
+  check('tapIndex 仍注入 widget.js', out.includes('/dsh-shorekeeper/widget.js'))
+  const twice = (indexTaps[0] || ((h) => h))(out) || out
+  check('tapIndex 幂等（黑幕只出现一次）', (twice.match(/id="skdw-boot-veil"/g) || []).length === 1, String((twice.match(/id="skdw-boot-veil"/g) || []).length))
+}
 
 // 8) 启动影片：海报、整片、Range、HEAD
 r = await callAndWait('GET', '/dsh-shorekeeper/startup-poster.jpg')

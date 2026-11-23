@@ -1,6 +1,6 @@
 {
   "name": "dsh-shorekeeper-widget",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "DSH 界面右下角常驻的「守岸人」余额记账挂件：余额 / 峰谷定价 / 今日已用 / 每轮消耗 / 启动动画 / 泡泡系统 / 音效与角色 / 多厂商余额与额度",
   "keywords": [
     "dsh",

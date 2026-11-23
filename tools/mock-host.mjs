@@ -25,6 +25,7 @@ const SCALE = Number(arg('scale', '1.2'))
 const INTRO_MS = Number(arg('intro', '2600'))
 const INTRO_STYLE = arg('style', 'veil')
 const MENU = process.argv.includes('--menu')
+const VEIL = process.argv.includes('--veil')
 
 const SIZE = {
   scale: SCALE, sound: false, vol: 0.9, soundSet: 'duck', usageMode: 'ledger', peakMode: 'default',
@@ -72,6 +73,7 @@ const FILES = {
 const MIME = { '.js': 'application/javascript; charset=utf-8', '.png': 'image/png', '.gif': 'image/gif', '.mp4': 'video/mp4', '.jpg': 'image/jpeg', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8' }
 
 const PAGE = `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>守岸人挂件 · mock 宿主</title>
+${VEIL ? `<script>(function(){try{var el=document.createElement('div');el.id='skdw-boot-veil';el.style.cssText='position:fixed;inset:0;z-index:2147483000;background:#02040a';document.documentElement.appendChild(el);window.__skdwBootVeil=el}catch(e){}})()</script>` : ''}
 <style>
   html,body{margin:0;height:100%;background:#f7f9fd;font-family:system-ui}
   #root{padding:40px}
