@@ -1273,39 +1273,23 @@ var css = [
   '.skdwv-resimp{flex:0 0 auto;border:1px solid rgba(32,49,112,.4);border-radius:5px;background:rgba(32,49,112,.08);color:#203170;font-size:11px;padding:1px 9px;cursor:pointer}',
   '.skdwv-resimp:hover{background:rgba(32,49,112,.16)}',
   '.skdwv-resempty{color:#9fb0d9;font-size:12px;padding:2px 6px}',
-  // ===== v1.0.0（新特性）：启动动画 =====
-  // 一整层固定在视口上的过场：星海背景 + 守岸人立绘 + 标题 + 进度条。
-  // 只在主聊天界面首次就绪时播一次（见 skdwIntroMaybe），也可从菜单「启动动画 → 设置」里预览。
-  // pointer-events 只在这一层上为 auto —— 点任意处跳过，结束后整层移除，不残留任何命中面。
-  '.skdw-intro{position:fixed;inset:0;z-index:30050;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(120% 120% at 50% 40%,#1b2f6e 0%,#0a1230 56%,#04060f 100%);opacity:0;transition:opacity .3s ease;pointer-events:auto;color-scheme:dark;cursor:pointer}',
-  '.skdw-intro.skdw-intro-in{opacity:1}',
-  '.skdw-intro.skdw-intro-out{opacity:0}',
-  '.skdw-intro-stars{position:absolute;inset:0;pointer-events:none;opacity:.55;animation:skdwIntroTwinkle 4.2s ease-in-out infinite alternate;background-image:radial-gradient(1.5px 1.5px at 18% 24%,rgba(198,228,255,.9),transparent 62%),radial-gradient(1.2px 1.2px at 74% 18%,rgba(198,228,255,.72),transparent 62%),radial-gradient(1.1px 1.1px at 38% 68%,rgba(180,215,255,.6),transparent 62%),radial-gradient(1.6px 1.6px at 86% 62%,rgba(210,238,255,.8),transparent 62%),radial-gradient(1px 1px at 56% 12%,rgba(180,215,255,.55),transparent 62%);background-size:100% 100%}',
-  '.skdw-intro-fig{position:relative;width:min(44vmin,300px);max-height:52vh;display:flex;align-items:flex-end;justify-content:center;transform:translateY(18px) scale(1.02);opacity:0;transition:transform .95s cubic-bezier(.2,.7,.2,1),opacity .95s ease}',
-  '.skdw-intro.skdw-intro-in .skdw-intro-fig{transform:translateY(0) scale(1);opacity:1}',
-  '.skdw-intro-fig img{display:block;max-width:100%;max-height:52vh;width:auto;height:auto;user-select:none;-webkit-user-drag:none;-webkit-user-select:none;filter:drop-shadow(0 18px 46px rgba(4,10,32,.62));-webkit-mask-image:linear-gradient(to bottom,#000 84%,rgba(0,0,0,0) 100%);mask-image:linear-gradient(to bottom,#000 84%,rgba(0,0,0,0) 100%)}',
-  '.skdw-intro-meta{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;margin-top:14px}',
-  '.skdw-intro-title{font-size:21px;font-weight:600;letter-spacing:.44em;text-indent:.44em;color:#eaf4ff;text-shadow:0 0 20px rgba(140,200,255,.5);opacity:0;transform:translateY(9px);transition:opacity .8s ease .22s,transform .8s ease .22s}',
-  '.skdw-intro.skdw-intro-in .skdw-intro-title{opacity:1;transform:none}',
-  '.skdw-intro-sub{font-size:9.5px;letter-spacing:.36em;text-indent:.36em;text-transform:uppercase;color:rgba(188,220,255,.6);opacity:0;transition:opacity .8s ease .4s}',
-  '.skdw-intro.skdw-intro-in .skdw-intro-sub{opacity:1}',
-  '.skdw-intro-bar{width:min(46vw,220px);height:2px;border-radius:2px;margin-top:6px;background:rgba(150,190,255,.16);overflow:hidden}',
-  '.skdw-intro-bar i{display:block;width:0;height:100%;border-radius:2px;background:linear-gradient(90deg,#7fc4ff,#e2f1ff);box-shadow:0 0 10px rgba(126,196,255,.8)}',
-  '.skdw-intro-hint{font-size:9.5px;letter-spacing:.2em;color:rgba(160,190,235,.42);margin-top:10px}',
-  // 星海夜幕：更暗的底、更亮的星
-  '.skdw-intro[data-style="starlit"]{background:radial-gradient(120% 120% at 50% 36%,#101c44 0%,#060b1e 60%,#02040a 100%)}',
-  '.skdw-intro[data-style="starlit"] .skdw-intro-stars{opacity:.9}',
-  // 极简留白：浅底、深字，不铺星
-  '.skdw-intro[data-style="minimal"]{background:linear-gradient(180deg,#f7faff,#eef3fd);cursor:pointer}',
-  '.skdw-intro[data-style="minimal"] .skdw-intro-stars{display:none}',
-  '.skdw-intro[data-style="minimal"] .skdw-intro-fig img{filter:drop-shadow(0 14px 30px rgba(32,49,112,.16))}',
-  '.skdw-intro[data-style="minimal"] .skdw-intro-title{color:#203170;text-shadow:none}',
-  '.skdw-intro[data-style="minimal"] .skdw-intro-sub{color:rgba(32,49,112,.45)}',
-  '.skdw-intro[data-style="minimal"] .skdw-intro-bar{background:rgba(32,49,112,.12)}',
-  '.skdw-intro[data-style="minimal"] .skdw-intro-bar i{background:linear-gradient(90deg,#203170,#5b7fd6);box-shadow:none}',
-  '.skdw-intro[data-style="minimal"] .skdw-intro-hint{color:rgba(32,49,112,.34)}',
-  '@keyframes skdwIntroTwinkle{from{opacity:.32}to{opacity:.8}}',
-  '@media (prefers-reduced-motion: reduce){.skdw-intro-fig,.skdw-intro-title,.skdw-intro-sub{transition:none!important;transform:none!important;opacity:1!important}.skdw-intro-stars{animation:none!important}}',
+  // ===== v1.1.0：启动影片 =====
+  // 整层铺满视口：黑色底 + 首帧海报 + <video> 开始播放后淡入，叠两行文字。
+  // pointer-events 只在这一层上为 auto —— 点任意处跳过；结束后整层移除并释放解码器。
+  '.skdw-film{position:fixed;inset:0;z-index:30050;background:#000;opacity:0;transition:opacity .42s ease;overflow:hidden;pointer-events:auto;cursor:pointer;color-scheme:dark}',
+  '.skdw-film.skdw-film-in{opacity:1}',
+  '.skdw-film.skdw-film-out{opacity:0;pointer-events:none}',
+  '.skdw-film-poster,.skdw-film-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;user-select:none;-webkit-user-drag:none}',
+  '.skdw-film-video{opacity:0;transition:opacity .85s ease}',
+  '.skdw-film.skdw-film-ready .skdw-film-video{opacity:1}',
+  '.skdw-film-text{position:absolute;left:0;right:0;bottom:15%;display:flex;flex-direction:column;align-items:center;gap:12px;pointer-events:none;text-align:center;padding:0 24px}',
+  '.skdw-film-title,.skdw-film-welcome{color:#eaf4ff;letter-spacing:.34em;text-indent:.34em;opacity:0;text-shadow:0 2px 20px rgba(0,0,0,.8),0 0 36px rgba(92,170,255,.45)}',
+  '.skdw-film-title{font-size:clamp(18px,2.1vw,26px);font-weight:600;animation:skdwFilmTitle 4.4s ease .9s forwards}',
+  '.skdw-film-welcome{font-size:clamp(13px,1.4vw,18px);font-weight:500;color:#cfe6ff;animation:skdwFilmWelcome 3.4s ease 7.1s forwards}',
+  '.skdw-film-hint{position:absolute;right:20px;bottom:16px;font-size:10px;letter-spacing:.18em;color:rgba(210,230,255,.42);pointer-events:none}',
+  '@keyframes skdwFilmTitle{0%{opacity:0;transform:translateY(12px)}16%{opacity:1;transform:none}70%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-10px)}}',
+  '@keyframes skdwFilmWelcome{0%{opacity:0;transform:translateY(10px)}22%{opacity:1;transform:none}100%{opacity:1;transform:none}}',
+  '@media (prefers-reduced-motion: reduce){.skdw-film-title,.skdw-film-welcome{animation:none!important;opacity:1;transform:none}.skdw-film-video{transition:none}}',
   // 面板里的样式选择按钮（复用 .skdwv-bubbtn 的尺寸，只覆盖选中态）
   '.skdwv-introstyle{border:1px solid rgba(32,49,112,.28);border-radius:6px;background:#fff;color:#203170;font-size:12px;padding:5px 12px;cursor:pointer}',
   '.skdwv-introstyle.skdwv-introstyle-on{background:#203170;border-color:#203170;color:#fff}'
@@ -19154,22 +19138,47 @@ var codexStatsOn = true
 // 打开 DSH 主界面时的一段过场：星海底 + 守岸人立绘 + 标题 + 进度条，播完自动淡出。
 // 只播一次（sessionStorage 记「本标签页已看过」）—— 刷新页面算新的一次，SPA 内部切路由不会再播。
 // 三个设置键与宿主 .skdw-size.json 的 introOn / introMs / introStyle 一一对应。
+// ===== v1.1.0：启动影片 =====
+// 打开 DSH 主界面时播放守岸人「闭眼 → 睁眼」的影片（60fps 高清 / 720p 流畅两档），
+// 叠「守岸人正在苏醒」与「欢迎回来，漂泊者」两行字；点击或 Esc 跳过，播完自动淡出。
+// 只播一次（sessionStorage 记「本标签页已看过」）—— 刷新算新的一次，站内切路由不会再播。
+// 若本机还装着「守岸人主题」插件（它有自己的影片与黑幕），这里直接让位，避免两段动画打架。
 var introOn = true
-var introMs = 2600
-var introStyle = 'veil'
-var INTRO_STYLES = ['veil', 'starlit', 'minimal']
-var INTRO_MS_MIN = 800
-var INTRO_MS_MAX = 6000
+var introMs = 2600           // 兼容旧配置字段：影片模式只把它当兜底参考
+var introStyle = 'veil'      // 兼容旧配置字段：影片模式不再使用
+var introQuality = 'auto'    // auto | hd | sd
+var introText = true
+var INTRO_QUALITIES = ['auto', 'hd', 'sd']
 var INTRO_SEEN_KEY = 'skdw-intro-seen'
+var INTRO_ASSET_V = '1'
+var INTRO_URL_HD = '/dsh-shorekeeper/startup-hd.mp4?v=' + INTRO_ASSET_V
+var INTRO_URL_SD = '/dsh-shorekeeper/startup-sd.mp4?v=' + INTRO_ASSET_V
+var INTRO_POSTER = '/dsh-shorekeeper/startup-poster.jpg?v=' + INTRO_ASSET_V
 var skdwIntroEl = null
 var skdwIntroTimers = []
-function skdwIntroClampMs(v) {
-  var n = Number(v)
-  if (!isFinite(n)) return 2600
-  return Math.max(INTRO_MS_MIN, Math.min(INTRO_MS_MAX, Math.round(n)))
+var skdwIntroVideo = null
+
+function skdwIntroNormalizeQuality(v) {
+  return INTRO_QUALITIES.indexOf(v) >= 0 ? v : 'auto'
 }
-function skdwIntroNormalizeStyle(v) {
-  return INTRO_STYLES.indexOf(v) >= 0 ? v : 'veil'
+// auto：核数少 / 内存小 / 省流量模式 → 720p；否则 60fps 高清
+function skdwIntroPickQuality() {
+  if (introQuality === 'hd') return 'hd'
+  if (introQuality === 'sd') return 'sd'
+  try {
+    var cores = Number(navigator.hardwareConcurrency) || 4
+    var mem = Number(navigator.deviceMemory) || 8
+    if (navigator.connection && navigator.connection.saveData) return 'sd'
+    if (cores <= 4 || mem <= 4) return 'sd'
+  } catch (err) {}
+  return 'hd'
+}
+// 主题插件（@local/dsh-shorekeeper-startup）在场：它播自己的影片，我们不抢
+function skdwIntroOtherSplash() {
+  try {
+    if (document.documentElement.classList.contains('dshsk-theme-on')) return true
+    return !!document.querySelector('.dshsk-root, .dshsk-boot-veil')
+  } catch (err) { return false }
 }
 function skdwIntroClearTimers() {
   for (var i = 0; i < skdwIntroTimers.length; i++) { try { clearTimeout(skdwIntroTimers[i]) } catch (err) {} }
@@ -19181,13 +19190,24 @@ function skdwIntroSeen() {
 function skdwIntroMarkSeen() {
   try { sessionStorage.setItem(INTRO_SEEN_KEY, '1') } catch (err) {}
 }
-// force=true 时忽略开关与「已看过」（菜单里的「预览」用）
+function skdwIntroReleaseVideo() {
+  try {
+    var v = skdwIntroVideo
+    skdwIntroVideo = null
+    if (!v) return
+    v.pause()
+    v.removeAttribute('src')
+    try { v.load() } catch (err) {}
+  } catch (err) {}
+}
+// force=true 忽略开关与「已看过」（面板里的预览用）
 function skdwIntroMaybe(force) {
   try {
     if (skdwIntroEl) return
     if (!force) {
       if (introOn === false) return
       if (skdwIntroSeen()) return
+      if (skdwIntroOtherSplash()) return // 让位给主题插件
     }
     skdwIntroMarkSeen()
     skdwIntroPlay({})
@@ -19196,67 +19216,45 @@ function skdwIntroMaybe(force) {
 function skdwIntroPlay(opts) {
   try {
     opts = opts || {}
-    var ms = skdwIntroClampMs(typeof opts.ms === 'number' ? opts.ms : introMs)
-    var style = skdwIntroNormalizeStyle(typeof opts.style === 'string' ? opts.style : introStyle)
-    // 系统开了「减少动态效果」：不摆动画，只留一个极短的静态过场
+    if (skdwIntroEl) return
     var reduced = false
     try { reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) } catch (err) {}
-    if (reduced) ms = Math.min(ms, 700)
-    // 同屏只留一层：重复触发时先把旧的收掉（必须走 skdwBodyDetach，否则会被 DOM 守护补挂回来）
-    try {
-      var olds = document.querySelectorAll('.skdw-intro')
-      for (var oi = 0; oi < olds.length; oi++) { try { skdwBodyDetach(olds[oi]) } catch (err) {} }
-    } catch (err) {}
+    var quality = opts.quality ? skdwIntroNormalizeQuality(opts.quality) : skdwIntroPickQuality()
+    if (quality === 'auto') quality = skdwIntroPickQuality()
+    var showText = (opts.text !== false) && (introText !== false)
     skdwIntroClearTimers()
 
     var el = document.createElement('div')
-    el.className = 'skdw-intro'
-    el.setAttribute('data-style', style)
+    el.className = 'skdw-film'
     el.setAttribute('role', 'presentation')
     el.setAttribute('aria-hidden', 'true')
 
-    var stars = document.createElement('div')
-    stars.className = 'skdw-intro-stars'
-    el.appendChild(stars)
+    // 首帧海报先上屏：黑底 + 定格画面，避免白闪，也保证视频慢时不是纯黑
+    var poster = document.createElement('img')
+    poster.className = 'skdw-film-poster'
+    poster.src = INTRO_POSTER
+    poster.alt = ''
+    poster.draggable = false
+    el.appendChild(poster)
 
-    var fig = document.createElement('div')
-    fig.className = 'skdw-intro-fig'
-    var im = document.createElement('img')
-    im.alt = '守岸人'
-    im.draggable = false
-    // 立绘：没换过角色 → 用过场专用图（已清掉整幅画布上的极淡白雾，深色背景下不发白）；
-    // 用户换过角色 → 跟着用他那张，换图即换过场。
-    var introRoleId = ''
-    try { introRoleId = localStorage.getItem('skdw-role') || '' } catch (err) {}
-    var INTRO_IMG_URL = '/dsh-shorekeeper/intro-image.png'
-    im.addEventListener('error', function () {
-      // 专用图缺失（老版本资源包）→ 回退到本体图，过场照常播
-      try { if (im.getAttribute('src') !== IMG_URL) im.src = IMG_URL } catch (err) {}
-    })
-    try { im.src = (introRoleId && introRoleId !== 'default') ? roleUrl(introRoleId) : INTRO_IMG_URL } catch (err) { im.src = IMG_URL }
-    fig.appendChild(im)
-    el.appendChild(fig)
+    var textBox = document.createElement('div')
+    textBox.className = 'skdw-film-text'
+    if (showText) {
+      var titleEl = document.createElement('div')
+      titleEl.className = 'skdw-film-title'
+      titleEl.textContent = '守岸人正在苏醒'
+      var welcomeEl = document.createElement('div')
+      welcomeEl.className = 'skdw-film-welcome'
+      welcomeEl.textContent = '欢迎回来，漂泊者'
+      textBox.appendChild(titleEl)
+      textBox.appendChild(welcomeEl)
+    }
+    el.appendChild(textBox)
 
-    var meta = document.createElement('div')
-    meta.className = 'skdw-intro-meta'
-    var title = document.createElement('div')
-    title.className = 'skdw-intro-title'
-    title.textContent = '守岸人'
-    var sub = document.createElement('div')
-    sub.className = 'skdw-intro-sub'
-    sub.textContent = 'DeepSeek Harness'
-    var bar = document.createElement('div')
-    bar.className = 'skdw-intro-bar'
-    var barFill = document.createElement('i')
-    bar.appendChild(barFill)
     var hint = document.createElement('div')
-    hint.className = 'skdw-intro-hint'
+    hint.className = 'skdw-film-hint'
     hint.textContent = '点击任意处跳过'
-    meta.appendChild(title)
-    meta.appendChild(sub)
-    meta.appendChild(bar)
-    meta.appendChild(hint)
-    el.appendChild(meta)
+    el.appendChild(hint)
 
     var finished = false
     var untie = null
@@ -19264,20 +19262,15 @@ function skdwIntroPlay(opts) {
       if (finished) return
       finished = true
       skdwIntroClearTimers()
-      // 提前跳过时也要摘掉键盘监听（否则每次过场都会在 document 上留一个 keydown 捕获器）
       try { if (untie) untie() } catch (err) {}
-      try {
-        el.classList.remove('skdw-intro-in')
-        el.classList.add('skdw-intro-out')
-      } catch (err) {}
+      try { el.classList.add('skdw-film-out') } catch (err) {}
       var t = setTimeout(function () {
+        try { skdwIntroReleaseVideo() } catch (err) {}
         try { skdwBodyDetach(el) } catch (err) {}
-      }, reduced ? 160 : 340)
+      }, 640)
       skdwIntroTimers.push(t)
       if (skdwIntroEl === el) skdwIntroEl = null
     }
-    // 点一下就跳过；键盘 Esc / 空格也跳过（无障碍）
-    el.addEventListener('pointerdown', function (e) { try { e.preventDefault() } catch (err) {} done() })
     function onKey(e) {
       try {
         if (e && (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter')) done()
@@ -19285,22 +19278,56 @@ function skdwIntroPlay(opts) {
     }
     try { document.addEventListener('keydown', onKey, true) } catch (err) {}
     untie = function () { try { document.removeEventListener('keydown', onKey, true) } catch (err) {} }
+    el.addEventListener('pointerdown', function (e) { try { e.preventDefault() } catch (err) {} done() })
 
-    // 进度条：transition 时长 = 过场时长，下一帧再推到 100%
-    try {
-      barFill.style.transition = 'width ' + ms + 'ms linear'
-      barFill.style.width = '0%'
-    } catch (err) {}
     skdwBodyAppend(el)
     skdwIntroEl = el
-    var raf1 = setTimeout(function () {
-      try {
-        el.classList.add('skdw-intro-in')
-        barFill.style.width = '100%'
-      } catch (err) {}
-    }, 30)
-    skdwIntroTimers.push(raf1)
-    skdwIntroTimers.push(setTimeout(done, ms + 260))
+    skdwIntroTimers.push(setTimeout(function () { try { el.classList.add('skdw-film-in') } catch (err) {} }, 20))
+
+    // 减少动态效果：不解码视频，海报 + 文字停 1.6 秒
+    if (reduced) {
+      skdwIntroTimers.push(setTimeout(function () { done() }, 1600))
+      return
+    }
+
+    var video = document.createElement('video')
+    video.className = 'skdw-film-video'
+    video.muted = true
+    video.defaultMuted = true
+    video.playsInline = true
+    video.setAttribute('playsinline', '')
+    video.setAttribute('muted', '')
+    video.setAttribute('preload', 'auto')
+    video.setAttribute('disablepictureinpicture', '')
+    skdwIntroVideo = video
+
+    var started = false
+    function beginPlay() {
+      if (started || finished) return
+      started = true
+      try { el.classList.add('skdw-film-ready') } catch (err) {}
+      var p = null
+      try { p = video.play() } catch (err) {}
+      if (p && p.catch) p.catch(function () { /* 自动播放被拦：停在海报上，交给兜底计时收场 */ })
+    }
+    video.addEventListener('loadeddata', beginPlay)
+    video.addEventListener('canplay', beginPlay)
+    video.addEventListener('playing', beginPlay)
+    video.addEventListener('ended', function () { done() })
+    video.addEventListener('error', function () { done() })
+    video.src = quality === 'hd' ? INTRO_URL_HD : INTRO_URL_SD
+    el.insertBefore(video, textBox)
+    try { video.load() } catch (err) {}
+    // 立刻发起播放：等 canplay 再 play() 会互相等待（部分环境下 readyState 卡在 1，事件永远不来）
+    try {
+      var kick = video.play()
+      if (kick && kick.then) kick.then(beginPlay).catch(function () { /* 被拦：继续等 canplay / 兜底计时 */ })
+    } catch (err) {}
+
+    // 视频 5 秒还没起来（网络慢/解码失败）→ 就停在海报上收场，别把界面锁住
+    skdwIntroTimers.push(setTimeout(function () { if (!started) done() }, 5000))
+    // 总兜底：15 秒必收场
+    skdwIntroTimers.push(setTimeout(function () { done() }, 15000))
   } catch (err) {}
 }
 
@@ -19359,7 +19386,7 @@ function configPayload() {
   //   宿主白名单、读侧合并、客户端回填都做了，唯独这里没发 ⇒ 宿主 pickB 走"沿用旧值(true)" ⇒ 永远存不住。
   //   与 v863 的 subagent.mute 是同一类"半截活"：新键必须走完 **四件套**
   //   ① 客户端 PUT 载荷 → ② 宿主写侧白名单 → ③ 宿主读侧合并 → ④ 客户端回填。
-  return JSON.stringify({ scale: state.scale, sound: soundOn, pressOn: pressOn !== false, vol: soundVol, soundSet: soundSet, usageMode: usageMode, peakMode: peakMode, bubbleOn: bubbleOn, turnCostOn: turnCostOn, turnCostCloseMs: turnCostCloseMs, scrollGapOn: scrollGapOn, scrollGapPx: scrollGapPx, menuBtnHide: menuBtnHide, codexStatsOn: codexStatsOn, introOn: introOn !== false, introMs: introMs, introStyle: introStyle })
+  return JSON.stringify({ scale: state.scale, sound: soundOn, pressOn: pressOn !== false, vol: soundVol, soundSet: soundSet, usageMode: usageMode, peakMode: peakMode, bubbleOn: bubbleOn, turnCostOn: turnCostOn, turnCostCloseMs: turnCostCloseMs, scrollGapOn: scrollGapOn, scrollGapPx: scrollGapPx, menuBtnHide: menuBtnHide, codexStatsOn: codexStatsOn, introOn: introOn !== false, introMs: introMs, introStyle: introStyle, introQuality: introQuality, introText: introText !== false })
 }
 // 真正的 PUT：读响应 → 失败（网络异常 / HTTP!=200 / {ok:false}）静默重试一次 → 仍失败才提示
 function configPut(payload, retried) {
@@ -19500,8 +19527,8 @@ function setIntroOn(v) {
 }
 function openIntroPanel() {
   try {
-    var snap = { on: introOn !== false, ms: skdwIntroClampMs(introMs), style: skdwIntroNormalizeStyle(introStyle) }
-    var buf = { on: snap.on, ms: snap.ms, style: snap.style }
+    var snap = { on: introOn !== false, quality: skdwIntroNormalizeQuality(introQuality), text: introText !== false }
+    var buf = { on: snap.on, quality: snap.quality, text: snap.text }
     var mask = document.createElement('div')
     mask.className = 'skdwv-bubmask'
     mask.style.zIndex = '30000'
@@ -19533,6 +19560,7 @@ function openIntroPanel() {
       card.appendChild(d)
       return d
     }
+
     sec('显示')
     var r1 = row()
     var chk = document.createElement('input')
@@ -19541,56 +19569,55 @@ function openIntroPanel() {
     chk.checked = buf.on
     chk.addEventListener('change', function () { buf.on = chk.checked })
     var lab = document.createElement('span')
-    lab.textContent = '打开 DSH 主界面时播放一次（刷新算一次，站内切页不重复）'
+    lab.textContent = '打开 DSH 主界面时播放一次（约 10 秒，点任意处跳过）'
     lab.style.fontSize = '12px'
     lab.style.color = '#203170'
     r1.appendChild(chk)
     r1.appendChild(lab)
 
-    sec('时长')
+    sec('画质')
     var r2 = row()
-    var range = document.createElement('input')
-    range.type = 'range'
-    range.min = String(INTRO_MS_MIN / 1000)
-    range.max = String(INTRO_MS_MAX / 1000)
-    range.step = '0.2'
-    range.className = 'skdwv-range'
-    range.value = String(buf.ms / 1000)
-    var numEl = document.createElement('span')
-    numEl.style.fontSize = '12px'
-    numEl.style.width = '40px'
-    numEl.style.textAlign = 'right'
-    numEl.textContent = (buf.ms / 1000).toFixed(1) + 's'
-    range.addEventListener('input', function () {
-      buf.ms = Math.round(Number(range.value) * 1000)
-      numEl.textContent = (buf.ms / 1000).toFixed(1) + 's'
-    })
-    r2.appendChild(range)
-    r2.appendChild(numEl)
-
-    sec('样式')
-    var r3 = row()
-    r3.style.flexWrap = 'wrap'
-    var styleBtns = []
-    var STYLES = [['veil', '深海微光'], ['starlit', '星海夜幕'], ['minimal', '极简留白']]
-    function paintStyles() {
-      for (var i = 0; i < styleBtns.length; i++) {
-        var b = styleBtns[i]
-        b.className = 'skdwv-introstyle' + (b.getAttribute('data-style') === buf.style ? ' skdwv-introstyle-on' : '')
+    r2.style.flexWrap = 'wrap'
+    var qBtns = []
+    var QS = [['auto', '自动'], ['hd', '高清 60fps'], ['sd', '流畅 720p']]
+    function paintQ() {
+      for (var i = 0; i < qBtns.length; i++) {
+        qBtns[i].className = 'skdwv-introstyle' + (qBtns[i].getAttribute('data-q') === buf.quality ? ' skdwv-introstyle-on' : '')
       }
     }
-    for (var si = 0; si < STYLES.length; si++) {
+    for (var qi = 0; qi < QS.length; qi++) {
       (function (id, name) {
         var b = document.createElement('button')
         b.type = 'button'
-        b.setAttribute('data-style', id)
+        b.setAttribute('data-q', id)
         b.textContent = name
-        b.addEventListener('click', function () { buf.style = id; paintStyles() })
-        styleBtns.push(b)
-        r3.appendChild(b)
-      })(STYLES[si][0], STYLES[si][1])
+        b.addEventListener('click', function () { buf.quality = id; paintQ() })
+        qBtns.push(b)
+        r2.appendChild(b)
+      })(QS[qi][0], QS[qi][1])
     }
-    paintStyles()
+    paintQ()
+    var qTip = document.createElement('div')
+    qTip.className = 'skdwv-bubsec'
+    qTip.style.borderTop = 'none'
+    qTip.style.margin = '2px 0 0'
+    qTip.style.paddingTop = '0'
+    qTip.textContent = '自动 = 核数/内存足够时用 60fps 高清，否则 720p 流畅'
+    card.appendChild(qTip)
+
+    sec('文字')
+    var r3 = row()
+    var textChk = document.createElement('input')
+    textChk.type = 'checkbox'
+    textChk.className = 'skdwv-check'
+    textChk.checked = buf.text
+    textChk.addEventListener('change', function () { buf.text = textChk.checked })
+    var textLab = document.createElement('span')
+    textLab.textContent = '显示「守岸人正在苏醒 / 欢迎回来，漂泊者」'
+    textLab.style.fontSize = '12px'
+    textLab.style.color = '#203170'
+    r3.appendChild(textChk)
+    r3.appendChild(textLab)
 
     var btns = document.createElement('div')
     btns.className = 'skdwv-bubbtns'
@@ -19604,10 +19631,9 @@ function openIntroPanel() {
     previewBtn.type = 'button'
     previewBtn.className = 'skdwv-bubbtn skdwv-bubbtn-no'
     previewBtn.textContent = '预览'
-    previewBtn.title = '按当前选择的时长与样式播放一次（不保存）'
+    previewBtn.title = '按当前选择播放一次（不保存）'
     previewBtn.addEventListener('click', function () {
-      // 过场 z-index(30050) 高于本面板(30000)：预览会盖住面板，播完自动回来
-      try { skdwIntroPlay({ ms: buf.ms, style: buf.style }) } catch (err) {}
+      try { skdwIntroPlay({ quality: buf.quality, text: buf.text }) } catch (err) {}
     })
     btns.appendChild(previewBtn)
     var okBtn = document.createElement('button')
@@ -19616,8 +19642,8 @@ function openIntroPanel() {
     okBtn.textContent = '保存'
     okBtn.addEventListener('click', function () {
       introOn = buf.on !== false
-      introMs = skdwIntroClampMs(buf.ms)
-      introStyle = skdwIntroNormalizeStyle(buf.style)
+      introQuality = skdwIntroNormalizeQuality(buf.quality)
+      introText = buf.text !== false
       if (introToggle) introToggle.checked = introOn
       saveConfig()
       close()
@@ -19630,6 +19656,7 @@ function openIntroPanel() {
     skdwBodyAppend(mask)
   } catch (err) {}
 }
+
 // ===== v1.0.0（新特性）：备份与迁移 =====
 function exportShorekeeperConfig() {
   try {
@@ -22352,8 +22379,11 @@ function sizeCfgApply(d) {
       introOn = d.introOn !== false
       try { if (introToggle) introToggle.checked = introOn } catch (err) {}
     }
-    if (d && typeof d.introMs === 'number') introMs = skdwIntroClampMs(d.introMs)
-    if (d && typeof d.introStyle === 'string' && INTRO_STYLES.indexOf(d.introStyle) >= 0) introStyle = d.introStyle
+    // v1.1.0：启动影片的开关 / 画质 / 文字（老配置只有 introOn 时，画质默认 auto、文字默认开）
+    if (d && typeof d.introQuality === 'string') introQuality = skdwIntroNormalizeQuality(d.introQuality)
+    if (d && typeof d.introText === 'boolean') introText = d.introText !== false
+    if (d && typeof d.introMs === 'number') introMs = d.introMs
+    if (d && typeof d.introStyle === 'string') introStyle = d.introStyle
     // 无论服务端带没带这个键都要应用一次：触屏上 ☰ 需要常显（issue #91 缺陷2），
     // 而旧写法只在键存在时才调用，空配置下按钮永远是透明的。
     applyMenuBtnHideUI()

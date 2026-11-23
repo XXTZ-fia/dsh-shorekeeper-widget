@@ -35,10 +35,16 @@
 | `Ya1.mp3` / `Ya2.mp3`、`D1.mp3` / `D2.mp3` | 内置按压 / 松开音效（沿用上游）。 |
 | `minecraft-exp-orb.wav`、`task-end-a.wav` | 任务结束音（沿用上游）。 |
 | `approve-default.wav`、`ask-default.wav`、`cost-default.wav` | 提示音（沿用上游）。 |
+| `startup-hd.mp4` | **启动影片**（1600×900 / 60fps）。由本地「守岸人主题」插件里的 10 秒原片（30fps）插帧、调色、重编码而来。 |
+| `startup-sd.mp4` | 同一段影片的 1280×720 / 30fps 版本，供低配设备与省流量模式。 |
+| `startup-poster.jpg` | 影片首帧海报（约 90 KB），用于视频解码前的即时画面。 |
 
 > **角色形象声明**：`shorekeeper.png` / `shorekeeper-alt.png` / `icon.png` 描绘的角色「守岸人」出自游戏《鸣潮》，
 > 其形象与相关权利归 **库洛游戏（Kuro Games）** 所有。本仓库随包分发这些图片**仅用于个人、非商业的界面装饰**，
 > 不代表权利人授权，也不构成任何形式的官方关联。你若再分发或商用，请自行确认授权。
+>
+> **启动影片声明**：`startup-hd.mp4` / `startup-sd.mp4` / `startup-poster.jpg` 同样来自《鸣潮》的影像素材，
+> 版权归库洛游戏所有，随包分发的用途与上面图片一致（个人、非商业的界面装饰）。这三份文件**不适用 MIT**。
 
 ## 四、元数据清理
 

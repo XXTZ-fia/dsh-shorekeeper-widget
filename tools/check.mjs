@@ -85,7 +85,19 @@ try {
   fail('检查资源引用失败：' + err.message)
 }
 
-// 5) 残留品牌词（旧版迁移表与「上游」说明里出现是允许的）
+// 5) 启动影片三件套必须在包内（路由能注册、文件缺了会在播放时才 404）
+for (const f of ['assets/startup-hd.mp4', 'assets/startup-sd.mp4', 'assets/startup-poster.jpg']) {
+  if (!exists(f)) fail(`缺少启动影片资源：${f}`)
+  else {
+    const size = fs.statSync(path.join(ROOT, f)).size
+    if (size < 1024) fail(`启动影片资源过小（疑似空文件）：${f}`)
+  }
+}
+if (['assets/startup-hd.mp4', 'assets/startup-sd.mp4', 'assets/startup-poster.jpg'].every((f) => exists(f))) {
+  pass('启动影片三件套齐全')
+}
+
+// 6) 残留品牌词（旧版迁移表与「上游」说明里出现是允许的）
 const BRAND_ALLOW = /LEGACY_|\.dshw-|whale-(roles|audio|bubble-imgs)|dsh-whale-widget|上游|迁移/
 for (const rel of ['lib/index.js', 'assets/shorekeeper-widget.js', 'package.json', 'cordis.patch.yml', 'README.md']) {
   if (!exists(rel)) continue
@@ -116,10 +128,11 @@ try {
   // 客户端引用的静态路由，宿主必须都有（只查完整的字面量，动态拼接的跳过）
   const client = read('assets/shorekeeper-widget.js')
   const used = new Set()
-  const cre = /'(\/dsh-shorekeeper\/[a-z0-9.\-]+\.(?:json|js|png|gif))(?:\?[^']*)?'/gi
+  const cre = /'(\/dsh-shorekeeper\/[a-z0-9.\-]+\.(?:json|js|png|gif|mp4|jpg))(?:\?[^']*)?'/gi
   let cm
   while ((cm = cre.exec(client))) used.add(cm[1])
-  const missing = [...used].filter((u) => !host.includes(`path: '${u}'`))
+  // 路由可以写成 path: '/x' ，也可以在 STARTUP_ASSETS 这类表里以键名出现（循环注册）
+  const missing = [...used].filter((u) => !host.includes(`path: '${u}'`) && !host.includes(`'${u}'`))
   if (missing.length) fail('客户端引用了宿主未注册的路由：' + missing.join(', '))
   else if (used.size) pass(`客户端引用的 ${used.size} 条静态路由都已注册`)
 } catch (err) {

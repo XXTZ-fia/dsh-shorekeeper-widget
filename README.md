@@ -10,7 +10,7 @@
 ![启动动画预览](docs/intro-preview.png)
 
 - 许可证：代码 MIT；素材见 [PROVENANCE.md](PROVENANCE.md)
-- 当前版本：**1.0.0**（见 [CHANGELOG.md](CHANGELOG.md)）
+- 当前版本：**1.1.0**（见 [CHANGELOG.md](CHANGELOG.md)）
 
 ---
 
@@ -48,17 +48,26 @@
 - 密钥写进 DSH 官方凭据服务，配置文件里**只存凭据名**。
 - 订阅额度支持一个接口多窗口（如 5h / 周 / 月），逐窗口展示已用百分比与重置倒计时。
 
-### 1.0.0 新增
+### 1.1.0 新增：启动影片
 
-**🕯️ 启动动画**
-打开 DSH 主界面时的一段过场：星海底 + 守岸人立绘 + 标题 + 进度条。
+**🎬 守岸人睁眼**
+打开 DSH 主界面时播放一段约 10 秒的影片：闭眼特写 → 睁眼 → 「守岸人正在苏醒」→「欢迎回来，漂泊者」，
+播完淡出。两档画质：
 
-- 三种样式：`深海微光`（默认）/ `星海夜幕` / `极简留白`
-- 时长 0.8–6.0 秒可调（默认 2.6 秒）
-- 点击任意处、或按 `Esc` / 空格 / 回车跳过
-- 每个标签页只播一次，站内切页不会重复
-- 跟随系统「减少动态效果」自动降级
-- 入口：菜单 →「启动动画」（开关），右侧「设置」里调时长、样式、预览
+| 档位 | 规格 | 体积 | 适用 |
+|---|---|---|---|
+| 高清 | 1600×900 / **60fps** / H.264 | ~4.0 MB | 默认，核数与内存足够的机器 |
+| 流畅 | 1280×720 / 30fps / H.264 | ~1.7 MB | 低配机、省流量模式、`自动` 判定为弱设备时 |
+
+- **自动选档**：`navigator.hardwareConcurrency`、`deviceMemory`、`saveData` 决定用哪档
+- **首帧海报先上屏**：黑底 + 定格画面，视频解码慢也不会白闪或黑屏
+- 点击任意处、或按 `Esc` / 空格 / 回车跳过；视频 2.6 秒还没起来就停在海报上收场，最长 13.5 秒必收
+- 每个标签页只播一次；`prefers-reduced-motion` 下**不下载视频**，只留海报 1.6 秒
+- 结束后主动释放视频解码器（`src` 置空 + `load()`），不占内存
+- **会主动让位**：检测到「守岸人主题」插件（`.dshsk-theme-on` / `.dshsk-root`）就不播，避免两段动画打架
+- 入口：菜单 →「启动动画」（开关），右侧「设置」里选画质、开关文字、预览
+
+### 1.0.0 已有
 
 **💾 备份与迁移**
 菜单 →「备份与迁移」→「导出」得到一个 JSON（外观开关 + 泡泡 + 模型表 + 账本），
@@ -100,7 +109,7 @@ dsh plugin --profile web add github:XXTZ-fia/dsh-shorekeeper-widget
 **A1. 在客户端界面里装**
 
 1. 到 [Releases](https://github.com/XXTZ-fia/dsh-shorekeeper-widget/releases/latest) 下载
-   `dsh-shorekeeper-widget-v1.0.0.zip`，解压到一个**以后不会移动或删除**的目录
+   `dsh-shorekeeper-widget-v1.1.0.zip`，解压到一个**以后不会移动或删除**的目录
    （例如 `D:\Plugins\dsh-shorekeeper-widget`）。要安装的是「包含 `package.json` 的那一层」，
    不要多套一层同名目录。也可以直接 `git clone` 仓库，效果一样。
 2. 打开 DSH 桌面客户端 → 左侧 **Plugins（插件）** → **Add plugin（添加插件）** → 选择上面的目录。
@@ -164,7 +173,7 @@ dsh plugin --profile web remove dsh-shorekeeper-widget                # 卸载
 2. **客户端半区**：刷新页面，右下角出现守岸人；打开浏览器 DevTools → Application → Local Storage，
    能看到 `skdw-pos` / `skdw-last-seq`。
 3. **接口**：浏览器访问 `http://127.0.0.1:<你的端口>/dsh-shorekeeper/size.json` 应返回 JSON。
-4. 菜单底部能看到版本号 `v1.0.0`。
+4. 菜单底部能看到版本号 `v1.1.0`。
 
 ---
 
@@ -181,8 +190,9 @@ dsh plugin --profile web remove dsh-shorekeeper-widget                # 卸载
 菜单 →「启动动画」：
 
 - 左侧 `[✓]` 是总开关
-- 右侧「设置」里可以调时长（0.8–6.0 秒）、换样式（深海微光 / 星海夜幕 / 极简留白）、点「预览」立刻看效果
+- 右侧「设置」里可以选画质（自动 / 高清 60fps / 流畅 720p）、开关两行文字、点「预览」立刻播一次
 - 想再看一次：刷新页面即可（同一标签页只播一次）
+- 如果你还装着「守岸人主题」插件，挂件会自动让位，不会出现两段动画叠在一起
 
 ### 备份与迁移
 
@@ -225,7 +235,7 @@ dsh plugin --profile web remove dsh-shorekeeper-widget                # 卸载
 npm run check     # 语法 + 清单一致性 + 路由 + 资源引用 + 残留品牌词
 npm run smoke     # 宿主半区冒烟：用临时 DSH_HOME 实跑配置读写 / 导出导入 / 旧数据迁移
 npm run mock      # 起一个本地 mock 宿主，浏览器直接看挂件（不用装 DSH）
-npm run pack      # 生成 dist/dsh-shorekeeper-widget-v1.0.0.zip
+npm run pack      # 生成 dist/dsh-shorekeeper-widget-v1.1.0.zip
 ```
 
 `npm run mock` 会在 `http://127.0.0.1:8791` 起一个只监听回环的假宿主，页面里放了一个模拟 composer
@@ -259,7 +269,7 @@ install.ps1                  安装助手
 的 `dsh.profile.bundles` 里有没有 `dsh-shorekeeper-widget`。桌面端首装后需要完全退出再打开。
 
 **启动动画不播？**
-菜单里「启动动画」的勾要打上；同一标签页只播一次，刷新试试。系统开了「减少动态效果」时会缩短到 0.7 秒。
+菜单里「启动动画」的勾要打上；同一标签页只播一次，刷新试试。若装了「守岸人主题」插件，挂件会主动让位（这是预期行为）。系统开了「减少动态效果」时只显示海报 1.6 秒，且不会下载视频。
 
 **余额一直是「—」？**
 说明没取到数：检查 DSH 凭据里有没有 `DEEPSEEK_API_KEY`，或是否登录了 DeepSeek 账号。

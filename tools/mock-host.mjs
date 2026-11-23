@@ -62,8 +62,11 @@ const FILES = {
   '/dsh-shorekeeper/image.png': 'shorekeeper.png',
   '/dsh-shorekeeper/intro-image.png': 'shorekeeper-intro.png',
   '/dsh-shorekeeper/rua.gif': 'bubble-petpet.gif',
+  '/dsh-shorekeeper/startup-hd.mp4': 'startup-hd.mp4',
+  '/dsh-shorekeeper/startup-sd.mp4': 'startup-sd.mp4',
+  '/dsh-shorekeeper/startup-poster.jpg': 'startup-poster.jpg',
 }
-const MIME = { '.js': 'application/javascript; charset=utf-8', '.png': 'image/png', '.gif': 'image/gif' }
+const MIME = { '.js': 'application/javascript; charset=utf-8', '.png': 'image/png', '.gif': 'image/gif', '.mp4': 'video/mp4', '.jpg': 'image/jpeg' }
 
 const PAGE = `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>守岸人挂件 · mock 宿主</title>
 <style>
@@ -77,12 +80,20 @@ const PAGE = `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>
 <pre id="errlog"></pre>
 <script>
 window.__errs = []
+if (location.search.indexOf('theme') >= 0) { document.documentElement.classList.add('dshsk-theme-on') }
 window.addEventListener('error', function (e) { window.__errs.push('error: ' + (e.message || '') + ' @ ' + (e.filename || '')) })
 window.addEventListener('unhandledrejection', function (e) { window.__errs.push('rejection: ' + ((e.reason && e.reason.message) || e.reason)) })
 setInterval(function () {
   var p = document.getElementById('errlog')
   if (!p) return
   if (window.__errs.length) { p.style.display = 'block'; p.textContent = window.__errs.join('\\n') }
+  if (location.search.indexOf('debug') >= 0) {
+    var v = document.querySelector('.skdw-film-video')
+    var film = document.querySelector('.skdw-film')
+    p.style.display = 'block'
+    p.textContent = 'video=' + (v ? ('t=' + (v.currentTime || 0).toFixed(2) + ' dur=' + (v.duration || 0).toFixed(2) + ' paused=' + v.paused + ' rs=' + v.readyState) : 'none')
+      + ' | film=' + (film ? film.className : 'none') + ' | errs=' + (window.__errs.join(' / ') || 'none')
+  }
 }, 300)
 ${MENU ? `setTimeout(function(){ var b = document.querySelector('.skdwv-menu-btn'); if (b) b.click() }, 3500)` : ''}
 </script>
@@ -96,6 +107,20 @@ const server = http.createServer((req, res) => {
     res.end(PAGE)
     return
   }
+  // /plain：只放一个原生 <video autoplay muted>，用来判断「无头浏览器能不能播 H.264」
+  if (p === '/plain') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' })
+    res.end(`<!doctype html><meta charset="utf-8"><body style="margin:0;background:#000">
+<video id="v" src="/dsh-shorekeeper/startup-hd.mp4" muted autoplay playsinline style="width:100%"></video>
+<pre id="out" style="position:fixed;left:8px;top:8px;color:#0f0;font:12px monospace"></pre>
+<script>
+setInterval(function () {
+  var v = document.getElementById('v')
+  document.getElementById('out').textContent = 't=' + v.currentTime.toFixed(2) + ' dur=' + (v.duration || 0).toFixed(2) + ' paused=' + v.paused + ' rs=' + v.readyState + ' err=' + (v.error ? v.error.code : 'none')
+}, 300)
+</script></body>`)
+    return
+  }
   if (STUBS[p]) {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' })
     res.end(JSON.stringify(STUBS[p]))
@@ -104,8 +129,26 @@ const server = http.createServer((req, res) => {
   if (FILES[p]) {
     const file = path.join(ASSETS, FILES[p])
     if (fs.existsSync(file)) {
-      res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' })
-      res.end(fs.readFileSync(file))
+      const type = MIME[path.extname(file)] || 'application/octet-stream'
+      const total = fs.statSync(file).size
+      const range = req.headers.range
+      if (range) {
+        const m = /^bytes=(\d*)-(\d*)$/.exec(String(range).trim())
+        let start = m && m[1] ? parseInt(m[1], 10) : 0
+        let end = m && m[2] ? parseInt(m[2], 10) : total - 1
+        if (!isFinite(start) || start < 0) start = 0
+        if (!isFinite(end) || end >= total) end = total - 1
+        res.writeHead(206, {
+          'Content-Type': type,
+          'Accept-Ranges': 'bytes',
+          'Content-Range': 'bytes ' + start + '-' + end + '/' + total,
+          'Content-Length': String(end - start + 1),
+        })
+        fs.createReadStream(file, { start, end }).pipe(res)
+        return
+      }
+      res.writeHead(200, { 'Content-Type': type, 'Content-Length': String(total), 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store' })
+      fs.createReadStream(file).pipe(res)
       return
     }
   }

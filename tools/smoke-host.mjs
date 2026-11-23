@@ -6,6 +6,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { EventEmitter } from 'node:events'
+import { Writable } from 'node:stream'
 import { pathToFileURL, fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -76,11 +77,11 @@ const root = {
   },
 }
 
-function fakeReq(method, url, body) {
+function fakeReq(method, url, body, headers) {
   const req = new EventEmitter()
   req.method = method
   req.url = url
-  req.headers = { host: '127.0.0.1:12345' }
+  req.headers = Object.assign({ host: '127.0.0.1:12345' }, headers || {})
   req.destroy = () => {}
   if (body !== undefined) {
     process.nextTick(() => {
@@ -94,22 +95,37 @@ function fakeReq(method, url, body) {
 }
 
 function fakeRes() {
-  const res = {
-    statusCode: 200,
-    headers: {},
-    chunks: [],
-    writeHead(code, headers) { this.statusCode = code; Object.assign(this.headers, headers || {}) },
-    end(chunk) { if (chunk !== undefined) this.chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk))) },
-    get body() { return Buffer.concat(this.chunks).toString('utf8') },
-    get bytes() { return Buffer.concat(this.chunks) },
+  // 必须是可写流：影片路由用 fs.createReadStream(...).pipe(res)
+  const chunks = []
+  const res = new Writable({
+    write(chunk, enc, cb) { chunks.push(Buffer.from(chunk)); cb() },
+  })
+  res.statusCode = 200
+  res.headers = {}
+  res.writeHead = function (code, headers) {
+    this.statusCode = code
+    Object.assign(this.headers, headers || {})
+    return this
   }
+  Object.defineProperty(res, 'body', { get() { return Buffer.concat(chunks).toString('utf8') } })
+  Object.defineProperty(res, 'bytes', { get() { return Buffer.concat(chunks) } })
   return res
 }
 
-async function call(method, url, body) {
+function callAndWait(method, url, body, headers) {
+  return new Promise((resolve) => {
+    call(method, url, body, headers).then((res) => {
+      if (res.writableFinished) return resolve(res)
+      res.on('finish', () => resolve(res))
+      res.on('close', () => resolve(res))
+    })
+  })
+}
+
+async function call(method, url, body, headers) {
   const route = routes.find((r) => r.path === url && (!r.kind || r.kind === 'exact'))
   if (!route) throw new Error(`路由没有注册：${method} ${url}`)
-  const req = fakeReq(method, url, body)
+  const req = fakeReq(method, url, body, headers)
   const res = fakeRes()
   await route.handler(req, res)
   return res
@@ -192,6 +208,37 @@ check('GET rua.gif 200（用 petpet 回退）', r.statusCode === 200, String(r.s
 // 7) 注入行存在
 const table = injections.find((x) => Array.isArray(x))
 check('注册了桌面端注入行', !!table && JSON.stringify(table).includes('/dsh-shorekeeper/widget.js'))
+
+// 8) 启动影片：海报、整片、Range、HEAD
+r = await callAndWait('GET', '/dsh-shorekeeper/startup-poster.jpg')
+check('GET 海报 200 且是 JPEG', r.statusCode === 200 && r.bytes[0] === 0xff && r.bytes[1] === 0xd8, String(r.statusCode))
+
+r = await callAndWait('GET', '/dsh-shorekeeper/startup-hd.mp4', undefined, { range: 'bytes=0-1023' })
+check('Range 请求返回 206', r.statusCode === 206, String(r.statusCode))
+check('Range 返回 1024 字节', r.bytes.length === 1024, String(r.bytes.length))
+check('Content-Range 正确', /^bytes 0-1023\/\d+$/.test(String(r.headers['Content-Range'])), String(r.headers['Content-Range']))
+check('支持 Range 标记', r.headers['Accept-Ranges'] === 'bytes', String(r.headers['Accept-Ranges']))
+check('影片带长缓存', /max-age=\d+/.test(String(r.headers['Cache-Control'])), String(r.headers['Cache-Control']))
+
+r = await callAndWait('HEAD', '/dsh-shorekeeper/startup-hd.mp4')
+check('HEAD 影片 200', r.statusCode === 200, String(r.statusCode))
+const hdSize = Number(r.headers['Content-Length'])
+check('HEAD 带 Content-Length 且与文件一致', hdSize > 1024 * 1024, String(hdSize))
+
+r = await callAndWait('GET', '/dsh-shorekeeper/startup-sd.mp4')
+check('GET 流畅档整片 200', r.statusCode === 200 && r.bytes.length === Number(fs.readFileSync(path.join(ROOT, 'assets', 'startup-sd.mp4')).length), String(r.statusCode))
+
+// 9) 启动影片的配置项
+r = await call('GET', '/dsh-shorekeeper/size.json')
+d = JSON.parse(r.body)
+check('默认 introQuality = auto', d.introQuality === 'auto', JSON.stringify(d.introQuality))
+check('默认 introText = true', d.introText === true, JSON.stringify(d.introText))
+r = await call('PUT', '/dsh-shorekeeper/size.json', JSON.stringify({ scale: 1.2, introQuality: 'sd', introText: false }))
+d = JSON.parse(r.body)
+check('PUT 后 introQuality = sd', d.introQuality === 'sd', r.body)
+check('PUT 后 introText = false', d.introText === false, r.body)
+const onDisk2 = JSON.parse(fs.readFileSync(path.join(tmp, '.skdw-size.json'), 'utf8'))
+check('落盘文件带画质/文字键', onDisk2.introQuality === 'sd' && onDisk2.introText === false)
 
 // 清理
 for (const fn of cleanups) { try { fn() } catch (err) {} }
