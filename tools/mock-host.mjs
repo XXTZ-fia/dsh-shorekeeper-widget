@@ -65,8 +65,11 @@ const FILES = {
   '/dsh-shorekeeper/startup-hd.mp4': 'startup-hd.mp4',
   '/dsh-shorekeeper/startup-sd.mp4': 'startup-sd.mp4',
   '/dsh-shorekeeper/startup-poster.jpg': 'startup-poster.jpg',
+  '/dsh-shorekeeper/splash.css': 'splash.css',
+  '/dsh-shorekeeper/sketch-paths.json': 'sketch-paths.json',
+  '/dsh-shorekeeper/logo-parts.json': 'logo-parts.json',
 }
-const MIME = { '.js': 'application/javascript; charset=utf-8', '.png': 'image/png', '.gif': 'image/gif', '.mp4': 'video/mp4', '.jpg': 'image/jpeg' }
+const MIME = { '.js': 'application/javascript; charset=utf-8', '.png': 'image/png', '.gif': 'image/gif', '.mp4': 'video/mp4', '.jpg': 'image/jpeg', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8' }
 
 const PAGE = `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>守岸人挂件 · mock 宿主</title>
 <style>

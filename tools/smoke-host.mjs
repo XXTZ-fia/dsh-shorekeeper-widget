@@ -228,7 +228,21 @@ check('HEAD 带 Content-Length 且与文件一致', hdSize > 1024 * 1024, String
 r = await callAndWait('GET', '/dsh-shorekeeper/startup-sd.mp4')
 check('GET 流畅档整片 200', r.statusCode === 200 && r.bytes.length === Number(fs.readFileSync(path.join(ROOT, 'assets', 'startup-sd.mp4')).length), String(r.statusCode))
 
-// 9) 启动影片的配置项
+// 9) 启动编排资源：样式 / 线稿 / 标识
+r = await callAndWait('GET', '/dsh-shorekeeper/splash.css')
+check('GET splash.css 200', r.statusCode === 200, String(r.statusCode))
+check('splash.css 含 skf-root', r.body.includes('.skf-root'))
+r = await callAndWait('GET', '/dsh-shorekeeper/sketch-paths.json')
+check('GET sketch-paths.json 200', r.statusCode === 200, String(r.statusCode))
+let sketch = null
+try { sketch = JSON.parse(r.body) } catch (err) {}
+check('线稿 443 条', !!sketch && Array.isArray(sketch.paths) && sketch.paths.length === 443, sketch ? String(sketch.paths.length) : 'parse fail')
+r = await callAndWait('GET', '/dsh-shorekeeper/logo-parts.json')
+let logo = null
+try { logo = JSON.parse(r.body) } catch (err) {}
+check('标识 24 个部件', Array.isArray(logo) && logo.length === 24, logo ? String(logo.length) : 'parse fail')
+
+// 10) 启动影片的配置项
 r = await call('GET', '/dsh-shorekeeper/size.json')
 d = JSON.parse(r.body)
 check('默认 introQuality = auto', d.introQuality === 'auto', JSON.stringify(d.introQuality))

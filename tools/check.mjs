@@ -86,15 +86,21 @@ try {
 }
 
 // 5) 启动影片三件套必须在包内（路由能注册、文件缺了会在播放时才 404）
-for (const f of ['assets/startup-hd.mp4', 'assets/startup-sd.mp4', 'assets/startup-poster.jpg']) {
+for (const f of [
+  'assets/startup-hd.mp4', 'assets/startup-sd.mp4', 'assets/startup-poster.jpg',
+  'assets/splash.css', 'assets/sketch-paths.json', 'assets/logo-parts.json',
+]) {
   if (!exists(f)) fail(`缺少启动影片资源：${f}`)
   else {
     const size = fs.statSync(path.join(ROOT, f)).size
     if (size < 1024) fail(`启动影片资源过小（疑似空文件）：${f}`)
   }
 }
-if (['assets/startup-hd.mp4', 'assets/startup-sd.mp4', 'assets/startup-poster.jpg'].every((f) => exists(f))) {
-  pass('启动影片三件套齐全')
+if ([
+  'assets/startup-hd.mp4', 'assets/startup-sd.mp4', 'assets/startup-poster.jpg',
+  'assets/splash.css', 'assets/sketch-paths.json', 'assets/logo-parts.json',
+].every((f) => exists(f))) {
+  pass('启动影片三件套 + 编排资源齐全')
 }
 
 // 6) 残留品牌词（旧版迁移表与「上游」说明里出现是允许的）

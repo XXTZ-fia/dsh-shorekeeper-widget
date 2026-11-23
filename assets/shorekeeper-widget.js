@@ -19213,7 +19213,7 @@ function skdwIntroMaybe(force) {
     skdwIntroPlay({})
   } catch (err) {}
 }
-function skdwIntroPlay(opts) {
+function skdwFilmOnlyPlay(opts) {
   try {
     opts = opts || {}
     if (skdwIntroEl) return
@@ -19329,6 +19329,527 @@ function skdwIntroPlay(opts) {
     // 总兜底：15 秒必收场
     skdwIntroTimers.push(setTimeout(function () { done() }, 15000))
   } catch (err) {}
+}
+// ===== v1.2.0：完整启动编排（移植自「守岸人主题」的 Splash 组件）=====
+// 时序与主题插件保持一致：RATE 1.25 倍速播放，3.83s 硬切（睁眼）触发闪光/扫描/粒子爆发，
+// 9.2s 进入退场（画面采样成粒子先散后聚）。线稿 443 笔与标识 24 件的数据由宿主路由下发。
+var SKF_RATE = 1.25
+var SKF_CUT_AT = 3.83
+var SKF_OUT_AT = 9.2
+var SKF_WELCOME = '欢迎回来，漂泊者'
+var SKF_ASSET_V = '2'
+var skfData = null
+var skfLoading = null
+var skdwIntroCleanup = null
+var skdwIntroRaf = 0
+
+function skfCharColor(index, count) {
+  var t = count <= 1 ? 0 : index / (count - 1)
+  var from = [79, 140, 255]
+  var to = [234, 252, 255]
+  var rgb = []
+  for (var c = 0; c < 3; c++) rgb.push(Math.round(from[c] + (to[c] - from[c]) * t))
+  return 'rgb(' + rgb.join(',') + ')'
+}
+function skfFetchText(url) {
+  return fetch(url, { cache: 'force-cache' }).then(function (r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    return r.text()
+  })
+}
+function skfFetchJson(url) {
+  return fetch(url, { cache: 'force-cache' }).then(function (r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    return r.json()
+  })
+}
+function skfLoadData() {
+  if (skfData) return Promise.resolve(skfData)
+  if (skfLoading) return skfLoading
+  skfLoading = Promise.all([
+    skfFetchText('/dsh-shorekeeper/splash.css?v=' + SKF_ASSET_V),
+    skfFetchJson('/dsh-shorekeeper/sketch-paths.json?v=' + SKF_ASSET_V),
+    skfFetchJson('/dsh-shorekeeper/logo-parts.json?v=' + SKF_ASSET_V),
+  ]).then(function (out) {
+    skfData = { css: out[0], sketch: out[1], logo: out[2] }
+    return skfData
+  })
+  return skfLoading
+}
+
+// 星尘粒子（背景常驻 + 睁眼瞬间爆发），与主题插件同一套算法
+function skfParticles(canvas, host) {
+  var ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  var raf = 0
+  var width = 0
+  var height = 0
+  var dpr = 1
+  var motes = []
+  function size() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2)
+    width = host.clientWidth || window.innerWidth
+    height = host.clientHeight || window.innerHeight
+    canvas.width = Math.max(1, Math.round(width * dpr))
+    canvas.height = Math.max(1, Math.round(height * dpr))
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  }
+  function spawn(count, burst) {
+    for (var i = 0; i < count; i++) {
+      var golden = Math.random() < 0.16
+      var angle = Math.random() * Math.PI * 2
+      var speed = burst ? 40 + Math.random() * 190 : 4 + Math.random() * 12
+      motes.push({
+        x: burst ? width * 0.6 + (Math.random() - 0.5) * width * 0.16 : Math.random() * width,
+        y: burst ? height * 0.44 + (Math.random() - 0.5) * height * 0.2 : Math.random() * height,
+        r: burst ? 0.7 + Math.random() * 1.7 : 0.5 + Math.random() * 1.4,
+        vx: burst ? Math.cos(angle) * speed : 3 + Math.random() * 9,
+        vy: burst ? Math.sin(angle) * speed : -3 - Math.random() * 8,
+        life: burst ? 1 : 0,
+        decay: burst ? 0.55 + Math.random() * 0.5 : 0,
+        twinkle: 0.6 + Math.random() * 1.8,
+        phase: Math.random() * Math.PI * 2,
+        color: golden ? '255,214,158' : (Math.random() < 0.42 ? '127,227,255' : '224,246,255'),
+      })
+    }
+  }
+  function step() {
+    var t = performance.now()
+    ctx.clearRect(0, 0, width, height)
+    ctx.globalCompositeOperation = 'lighter'
+    for (var i = motes.length - 1; i >= 0; i--) {
+      var p = motes[i]
+      var dt = 1 / 60
+      p.x += p.vx * dt
+      p.y += p.vy * dt
+      if (p.life > 0) {
+        p.life -= p.decay * dt
+        p.vx *= 0.985
+        p.vy = p.vy * 0.985 + 6 * dt
+      } else {
+        p.vy -= 0.9 * dt
+        if (p.y < -12) { p.y = height + 10; p.x = Math.random() * width }
+        if (p.x < -12) p.x = width + 10
+        if (p.x > width + 12) p.x = -10
+      }
+      if (p.life < 0) { motes.splice(i, 1); continue }
+      var flicker = 0.55 + 0.45 * Math.sin(t * 0.001 * p.twinkle + p.phase)
+      var alpha = (p.life > 0 ? Math.max(0, p.life) : 0.5) * flicker
+      if (alpha <= 0.01) continue
+      ctx.beginPath()
+      ctx.fillStyle = 'rgba(' + p.color + ',' + (alpha * 0.10) + ')'
+      ctx.arc(p.x, p.y, p.r * 4.4, 0, 6.2832)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.fillStyle = 'rgba(' + p.color + ',' + (alpha * 0.8) + ')'
+      ctx.arc(p.x, p.y, p.r, 0, 6.2832)
+      ctx.fill()
+    }
+    raf = requestAnimationFrame(step)
+  }
+  size()
+  spawn(64, false)
+  step()
+  var onResize = function () { size() }
+  window.addEventListener('resize', onResize)
+  return {
+    burst: function () { spawn(46, true) },
+    dispose: function () {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('resize', onResize)
+      motes.length = 0
+    },
+  }
+}
+
+function skfAddSvg(parent, tag, attrs) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tag)
+  for (var k in attrs) if (Object.prototype.hasOwnProperty.call(attrs, k)) el.setAttribute(k, String(attrs[k]))
+  parent.appendChild(el)
+  return el
+}
+function skfBuildLogo(parts) {
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('viewBox', '0 0 996.38452 822')
+  svg.setAttribute('aria-hidden', 'true')
+  svg.setAttribute('focusable', 'false')
+  var defs = skfAddSvg(svg, 'defs', {})
+  var grad = skfAddSvg(defs, 'linearGradient', { id: 'skf-logo-gradient', x1: '0', y1: '0', x2: '1', y2: '1' })
+  skfAddSvg(grad, 'stop', { offset: '0', 'stop-color': '#ecfdff' })
+  skfAddSvg(grad, 'stop', { offset: '0.55', 'stop-color': '#93eaff' })
+  skfAddSvg(grad, 'stop', { offset: '1', 'stop-color': '#5d8fff' })
+  for (var i = 0; i < parts.length; i++) {
+    var p = skfAddSvg(svg, 'path', { d: parts[i].d, fill: 'url(#skf-logo-gradient)' })
+    p.setAttribute('class', 'skf-logo-part')
+    p.style.setProperty('--i', String(i))
+  }
+  return svg
+}
+function skfBuildSketch(sketch) {
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('class', 'skf-sketch')
+  svg.setAttribute('viewBox', '0 0 1600 900')
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid slice')
+  svg.setAttribute('aria-hidden', 'true')
+  svg.setAttribute('focusable', 'false')
+  var defs = skfAddSvg(svg, 'defs', {})
+  var grad = skfAddSvg(defs, 'linearGradient', {
+    id: 'skf-stroke-grad', gradientUnits: 'userSpaceOnUse', x1: '0', y1: '0', x2: '1600', y2: '900',
+  })
+  skfAddSvg(grad, 'stop', { offset: '0', 'stop-color': '#eafcff' })
+  skfAddSvg(grad, 'stop', { offset: '0.45', 'stop-color': '#8fe9ff' })
+  skfAddSvg(grad, 'stop', { offset: '1', 'stop-color': '#4f8cff' })
+  var paths = (sketch && sketch.paths) || []
+  for (var i = 0; i < paths.length; i++) {
+    var p = skfAddSvg(svg, 'path', { d: paths[i].d })
+    p.setAttribute('class', 'skf-stroke')
+    p.style.setProperty('--len', String(paths[i].len))
+    p.style.setProperty('--dur', paths[i].dur + 's')
+    p.style.setProperty('--delay', String(paths[i].delay) + 's')
+  }
+  return svg
+}
+
+function skdwSplashBuild(data, opts) {
+  try {
+    opts = opts || {}
+    if (skdwIntroEl) return
+    var reduced = false
+    try { reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) } catch (err) {}
+    var quality = opts.quality ? skdwIntroNormalizeQuality(opts.quality) : skdwIntroPickQuality()
+    if (quality === 'auto' || !quality) quality = skdwIntroPickQuality()
+    var showText = (opts.text !== false) && (introText !== false)
+    skdwIntroClearTimers()
+
+    // 样式只注入一次
+    try {
+      if (!document.getElementById('skf-style')) {
+        var st = document.createElement('style')
+        st.id = 'skf-style'
+        st.setAttribute('data-plugin', 'dsh-shorekeeper-widget')
+        st.textContent = data.css
+        document.head.appendChild(st)
+      }
+    } catch (err) {}
+
+    var div = function (cls) { var d = document.createElement('div'); d.className = cls; return d }
+    var rootEl = div('skf-root')
+    rootEl.setAttribute('data-phase', 'intro')
+    rootEl.setAttribute('data-closing', 'false')
+    rootEl.setAttribute('data-outro', 'false')
+    rootEl.setAttribute('role', 'dialog')
+    rootEl.setAttribute('aria-label', '守岸人启动动画')
+
+    var media = div('skf-media')
+    var video = document.createElement('video')
+    video.className = 'skf-video'
+    video.muted = true
+    video.defaultMuted = true
+    video.playsInline = true
+    video.tabIndex = -1
+    video.setAttribute('playsinline', '')
+    video.setAttribute('muted', '')
+    video.setAttribute('preload', 'auto')
+    video.setAttribute('aria-hidden', 'true')
+    video.addEventListener('loadedmetadata', function () { try { video.playbackRate = SKF_RATE } catch (err) {} })
+    video.src = quality === 'hd' ? INTRO_URL_HD : INTRO_URL_SD
+    media.appendChild(video)
+    rootEl.appendChild(media)
+
+    var sketchWrap = div('skf-sketch-wrap')
+    sketchWrap.appendChild(div('skf-sketch-bg'))
+    try { sketchWrap.appendChild(skfBuildSketch(data.sketch)) } catch (err) {}
+    rootEl.appendChild(sketchWrap)
+
+    rootEl.appendChild(div('skf-tint'))
+    rootEl.appendChild(div('skf-flash'))
+    rootEl.appendChild(div('skf-scan'))
+
+    var dissolve = document.createElement('canvas')
+    dissolve.className = 'skf-dissolve'
+    var particles = document.createElement('canvas')
+    particles.className = 'skf-particles'
+    rootEl.appendChild(dissolve)
+    rootEl.appendChild(particles)
+
+    var brackets = div('skf-brackets')
+    for (var bi = 0; bi < 4; bi++) brackets.appendChild(document.createElement('i'))
+    rootEl.appendChild(brackets)
+
+    var inner = div('skf-inner')
+    var copyEl = div('skf-copy')
+
+    var head = document.createElement('header')
+    head.className = 'skf-head'
+    var emblem = div('skf-emblem')
+    try { emblem.appendChild(skfBuildLogo(data.logo || [])) } catch (err) {}
+    head.appendChild(emblem)
+    var faction = div('skf-faction')
+    var factionCn = div('skf-faction-cn')
+    var factionChars = Array.from('黑海岸')
+    for (var fi = 0; fi < factionChars.length; fi++) {
+      var fch = document.createElement('span')
+      fch.className = 'skf-faction-char'
+      fch.style.setProperty('--i', String(fi))
+      fch.textContent = factionChars[fi]
+      factionCn.appendChild(fch)
+    }
+    var factionEn = div('skf-faction-en')
+    factionEn.textContent = 'BLACK SHORES'
+    faction.appendChild(factionCn)
+    faction.appendChild(factionEn)
+    head.appendChild(faction)
+    copyEl.appendChild(head)
+
+    var brand = document.createElement('h1')
+    brand.className = 'skf-brand'
+    brand.textContent = 'DeepSeek'
+    copyEl.appendChild(brand)
+
+    var lines = div('skf-lines')
+    var awakeEl = div('skf-awake')
+    awakeEl.textContent = '守岸人正在苏醒'
+    var welcomeEl = div('skf-welcome')
+    var wchars = Array.from(SKF_WELCOME)
+    for (var wi = 0; wi < wchars.length; wi++) {
+      var ch = document.createElement('span')
+      ch.className = 'skf-char'
+      ch.style.setProperty('--i', String(wi))
+      ch.style.color = skfCharColor(wi, wchars.length)
+      ch.textContent = wchars[wi]
+      welcomeEl.appendChild(ch)
+    }
+    var subEl = div('skf-sub')
+    subEl.textContent = 'WELCOME BACK, ROVER'
+    lines.appendChild(awakeEl)
+    lines.appendChild(welcomeEl)
+    lines.appendChild(subEl)
+    copyEl.appendChild(lines)
+    inner.appendChild(copyEl)
+
+    var foot = document.createElement('footer')
+    foot.className = 'skf-foot'
+    var metaEl = div('skf-meta')
+    metaEl.textContent = 'DSH × 鸣潮 · '
+    var metaB = document.createElement('b')
+    metaB.textContent = 'WUTHERING WAVES'
+    metaEl.appendChild(metaB)
+    var skipBtn = document.createElement('button')
+    skipBtn.type = 'button'
+    skipBtn.className = 'skf-skip'
+    var keyEl = document.createElement('span')
+    keyEl.className = 'skf-key'
+    keyEl.textContent = 'ESC'
+    var skipTxt = document.createElement('span')
+    skipTxt.textContent = '跳过'
+    skipBtn.appendChild(keyEl)
+    skipBtn.appendChild(skipTxt)
+    var footRight = div('skf-foot-right')
+    var dotEl = document.createElement('i')
+    dotEl.className = 'skf-dot'
+    var footRightTxt = document.createElement('span')
+    footRightTxt.textContent = 'BLACK SHORES'
+    footRight.appendChild(dotEl)
+    footRight.appendChild(footRightTxt)
+    var progress = div('skf-progress')
+    var bar = document.createElement('i')
+    progress.appendChild(bar)
+    foot.appendChild(metaEl)
+    foot.appendChild(skipBtn)
+    foot.appendChild(footRight)
+    foot.appendChild(progress)
+    inner.appendChild(foot)
+    rootEl.appendChild(inner)
+
+    if (!showText) {
+      try { copyEl.style.display = 'none'; foot.style.display = 'none' } catch (err) {}
+    }
+    if (reduced) rootEl.setAttribute('data-reduced', 'true')
+
+    skdwBodyAppend(rootEl)
+    skdwIntroEl = rootEl
+    skdwIntroVideo = video
+
+    var closing = false
+    var phase = 'intro'
+    var startedAt = performance.now()
+    var particleCtl = reduced ? null : skfParticles(particles, rootEl)
+    var untie = null
+    var raf = 0
+
+    function cleanup() {
+      try { cancelAnimationFrame(raf) } catch (err) {}
+      skdwIntroClearTimers()
+      try { if (untie) untie() } catch (err) {}
+      try { if (particleCtl) particleCtl.dispose() } catch (err) {}
+      particleCtl = null
+      try {
+        video.pause()
+        video.removeAttribute('src')
+        video.load()
+      } catch (err) {}
+      try { skdwIntroReleaseVideo() } catch (err) {}
+      skdwIntroVideo = null
+      skdwIntroCleanup = null
+    }
+
+    function end(immediate) {
+      if (closing) return
+      closing = true
+      if (!immediate) {
+        rootEl.setAttribute('data-outro', 'true')
+        skfDissolve(dissolve, video)
+      }
+      rootEl.setAttribute('data-closing', 'true')
+      try { video.pause() } catch (err) {}
+      // 主题插件退场时背后是循环背景，我们背后是应用界面 —— 粒子散尽后整层淡出，避免闪白
+      if (!immediate) {
+        skdwIntroTimers.push(setTimeout(function () {
+          try { rootEl.setAttribute('data-fading', 'true') } catch (err) {}
+        }, 1120))
+      }
+      skdwIntroTimers.push(setTimeout(function () {
+        cleanup()
+        try { skdwBodyDetach(rootEl) } catch (err) {}
+      }, immediate ? 380 : 1750))
+    }
+
+    function tick() {
+      var viaVideo = video.readyState >= 2 && !video.paused && video.currentTime > 0.02
+      var elapsed = (performance.now() - startedAt) / 1000
+      var time = viaVideo ? video.currentTime : elapsed * SKF_RATE
+      if (phase === 'intro' && time >= SKF_CUT_AT) {
+        phase = 'awake'
+        rootEl.setAttribute('data-phase', 'awake')
+        if (particleCtl) particleCtl.burst()
+      }
+      if (time >= SKF_OUT_AT) end(false)
+      try {
+        var v = Math.max(0, Math.min(1, time / SKF_OUT_AT))
+        bar.style.transform = 'scaleX(' + v.toFixed(4) + ')'
+      } catch (err) {}
+      raf = requestAnimationFrame(tick)
+    }
+
+    function onKey(e) {
+      try {
+        if (e && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); end(true) }
+      } catch (err) {}
+    }
+    try { document.addEventListener('keydown', onKey, true) } catch (err) {}
+    untie = function () { try { document.removeEventListener('keydown', onKey, true) } catch (err) {} }
+    rootEl.addEventListener('click', function () { end(true) })
+    skipBtn.addEventListener('click', function (e) { try { e.stopPropagation() } catch (err) {} end(true) })
+
+    var play = video.play()
+    if (play && typeof play.catch === 'function') play.catch(function () {})
+    try { video.playbackRate = SKF_RATE } catch (err) {}
+    raf = requestAnimationFrame(tick)
+    skdwIntroCleanup = cleanup
+  } catch (err) {
+    try { skdwFilmOnlyPlay({}) } catch (err2) {}
+  }
+}
+
+// 退场：把当前画面采样成彩色光点，先向外扩散、再向中心汇聚淡出
+function skfDissolve(canvas, video) {
+  try {
+    var ctx = canvas.getContext('2d')
+    if (!ctx) return
+    var W = Math.round(canvas.clientWidth || window.innerWidth)
+    var H = Math.round(canvas.clientHeight || window.innerHeight)
+    canvas.width = W
+    canvas.height = H
+    var sw = 300
+    var sh = Math.max(2, Math.round(300 * H / W))
+    var off = document.createElement('canvas')
+    off.width = sw
+    off.height = sh
+    var octx = off.getContext('2d')
+    var list = []
+    try {
+      if (video && video.videoWidth > 0) {
+        var vw = video.videoWidth
+        var vh = video.videoHeight
+        var scale = Math.max(sw / vw, sh / vh)
+        var dw = vw * scale
+        var dh = vh * scale
+        octx.drawImage(video, (sw - dw) / 2, (sh - dh) / 2, dw, dh)
+        var data = octx.getImageData(0, 0, sw, sh).data
+        for (var y = 0; y < sh; y += 3) {
+          for (var x = 0; x < sw; x += 3) {
+            if (Math.random() < 0.28) continue
+            var i = (y * sw + x) * 4
+            var r = data[i], g = data[i + 1], b = data[i + 2]
+            if (r + g + b < 26) continue
+            list.push({
+              sx: x / sw * W, sy: y / sh * H,
+              size: 1 + Math.random() * 2.2, col: r + ',' + g + ',' + b,
+              delay: Math.random() * 0.16, wobble: Math.random() * 6.283, vx: 0, vy: 0,
+            })
+          }
+        }
+      }
+    } catch (err) {}
+    var cx = W * 0.6
+    var cy = H * 0.46
+    for (var k = 0; k < list.length; k++) {
+      var p = list[k]
+      var dx = p.sx - cx
+      var dy = p.sy - cy
+      var len = Math.sqrt(dx * dx + dy * dy) || 1
+      var speed = 40 + Math.random() * 170
+      p.vx = (dx / len) * speed
+      p.vy = (dy / len) * speed - 14
+    }
+    var started = performance.now()
+    var raf = 0
+    var easeOut = function (v) { return 1 - Math.pow(1 - v, 3) }
+    function frame() {
+      var t = (performance.now() - started) / 1000
+      ctx.clearRect(0, 0, W, H)
+      ctx.globalCompositeOperation = 'lighter'
+      for (var n = 0; n < list.length; n++) {
+        var q = list[n]
+        var local = t - q.delay
+        if (local <= 0) continue
+        var scatter = easeOut(Math.min(1, local / 0.55))
+        var px = q.sx + q.vx * scatter * 0.8 + Math.sin(local * 3.4 + q.wobble) * 16 * scatter
+        var py = q.sy + q.vy * scatter * 0.8 + 30 * scatter * scatter
+        var alpha = 0.92
+        if (local > 0.62) {
+          var kk = Math.min(1, (local - 0.62) / 0.72)
+          var ease = kk * kk
+          px += (cx + (q.sx - cx) * 0.1 - px) * ease
+          py += (cy + (q.sy - cy) * 0.1 - py) * ease
+          alpha = 1 - kk
+        } else {
+          alpha = 0.92 * (1 - Math.max(0, local - 0.42) * 0.5)
+        }
+        if (alpha <= 0.01) continue
+        ctx.fillStyle = 'rgba(' + q.col + ',' + alpha.toFixed(3) + ')'
+        ctx.beginPath()
+        ctx.arc(px, py, q.size * (1 - 0.25 * Math.min(1, t / 1.4)), 0, 6.2832)
+        ctx.fill()
+      }
+      if (t < 1.6) raf = requestAnimationFrame(frame)
+      else ctx.clearRect(0, 0, W, H)
+    }
+    frame()
+  } catch (err) {}
+}
+
+function skdwIntroPlay(opts) {
+  try {
+    if (skdwIntroEl) return
+    var o = opts || {}
+    if (skfData) { skdwSplashBuild(skfData, o); return }
+    skfLoadData().then(function (d) { skdwSplashBuild(d, o) }).catch(function () {
+      try { skdwFilmOnlyPlay(o) } catch (err) {}
+    })
+  } catch (err) {
+    try { skdwFilmOnlyPlay(opts) } catch (err2) {}
+  }
 }
 
 // —— v734（issue #97 / #88）：设置保存的「防覆盖 + 失败可见」——

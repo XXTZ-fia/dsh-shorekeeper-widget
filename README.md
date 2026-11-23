@@ -10,7 +10,7 @@
 ![启动动画预览](docs/intro-preview.png)
 
 - 许可证：代码 MIT；素材见 [PROVENANCE.md](PROVENANCE.md)
-- 当前版本：**1.1.0**（见 [CHANGELOG.md](CHANGELOG.md)）
+- 当前版本：**1.2.0**（见 [CHANGELOG.md](CHANGELOG.md)）
 
 ---
 
@@ -48,24 +48,32 @@
 - 密钥写进 DSH 官方凭据服务，配置文件里**只存凭据名**。
 - 订阅额度支持一个接口多窗口（如 5h / 周 / 月），逐窗口展示已用百分比与重置倒计时。
 
-### 1.1.0 新增：启动影片
+### 1.2.0 新增：完整启动编排
 
-**🎬 守岸人睁眼**
-打开 DSH 主界面时播放一段约 10 秒的影片：闭眼特写 → 睁眼 → 「守岸人正在苏醒」→「欢迎回来，漂泊者」，
-播完淡出。两档画质：
+**🎬 守岸人睁眼（与「守岸人主题」插件同款编排）**
 
-| 档位 | 规格 | 体积 | 适用 |
-|---|---|---|---|
-| 高清 | 1600×900 / **60fps** / H.264 | ~4.0 MB | 默认，核数与内存足够的机器 |
-| 流畅 | 1280×720 / 30fps / H.264 | ~1.7 MB | 低配机、省流量模式、`自动` 判定为弱设备时 |
+打开 DSH 主界面时播放的是一整套编舞，不只是视频：
 
-- **自动选档**：`navigator.hardwareConcurrency`、`deviceMemory`、`saveData` 决定用哪档
-- **首帧海报先上屏**：黑底 + 定格画面，视频解码慢也不会白闪或黑屏
-- 点击任意处、或按 `Esc` / 空格 / 回车跳过；视频 2.6 秒还没起来就停在海报上收场，最长 13.5 秒必收
-- 每个标签页只播一次；`prefers-reduced-motion` 下**不下载视频**，只留海报 1.6 秒
-- 结束后主动释放视频解码器（`src` 置空 + `load()`），不占内存
-- **会主动让位**：检测到「守岸人主题」插件（`.dshsk-theme-on` / `.dshsk-root`）就不播，避免两段动画打架
+1. **逐笔线稿**：443 条矢量笔画按「结构 → 中景 → 细节」分三批生长（`stroke-dashoffset`），衬黑底星尘
+2. **文字入场**：`DeepSeek` 与「守岸人正在苏醒」自下而上渐显
+3. **睁眼融合**（3.83s）：闪光 + 下扫光 + 46 颗粒子爆发，线稿淡出、影片亮起
+4. **逐字推入**：「欢迎回来，漂泊者」每个字带位移与去模糊，沿整行取蓝色渐变
+5. **标识拼装**：黑海岸标识拆成 24 个部件自右向左推入，`BLACK SHORES` 最后淡入
+6. **退场**：画面采样成数千彩色光点，先向外扩散再向中心汇聚，最后整层淡出
+
+- 播放速度 1.25×，与主题插件一致；点击 / `Esc` / 跳过按钮立即结束
+- 影片两档：`1600×900 / 60fps`（3.2 MB）与 `1280×720 / 30fps`（1.7 MB），`auto` 按设备能力选档
+- 线稿与标识数据（52 KB）由宿主路由下发，只在播放时拉取，不占首屏
+- `prefers-reduced-motion`：关闭笔画生长与位移动画
+- 检测到「守岸人主题」插件时**主动让位**，不会两段动画叠着播
 - 入口：菜单 →「启动动画」（开关），右侧「设置」里选画质、开关文字、预览
+
+![启动编排](docs/intro-preview.png)
+
+### 1.1.0 已有：影片资源
+
+影片本体（`startup-hd.mp4` / `startup-sd.mp4` / 首帧海报）走独立路由，支持 HTTP Range 与长缓存；
+调度、海报兜底、解码器释放等机制沿用 1.1.0。
 
 ### 1.0.0 已有
 
@@ -109,7 +117,7 @@ dsh plugin --profile web add github:XXTZ-fia/dsh-shorekeeper-widget
 **A1. 在客户端界面里装**
 
 1. 到 [Releases](https://github.com/XXTZ-fia/dsh-shorekeeper-widget/releases/latest) 下载
-   `dsh-shorekeeper-widget-v1.1.0.zip`，解压到一个**以后不会移动或删除**的目录
+   `dsh-shorekeeper-widget-v1.2.0.zip`，解压到一个**以后不会移动或删除**的目录
    （例如 `D:\Plugins\dsh-shorekeeper-widget`）。要安装的是「包含 `package.json` 的那一层」，
    不要多套一层同名目录。也可以直接 `git clone` 仓库，效果一样。
 2. 打开 DSH 桌面客户端 → 左侧 **Plugins（插件）** → **Add plugin（添加插件）** → 选择上面的目录。
@@ -173,7 +181,7 @@ dsh plugin --profile web remove dsh-shorekeeper-widget                # 卸载
 2. **客户端半区**：刷新页面，右下角出现守岸人；打开浏览器 DevTools → Application → Local Storage，
    能看到 `skdw-pos` / `skdw-last-seq`。
 3. **接口**：浏览器访问 `http://127.0.0.1:<你的端口>/dsh-shorekeeper/size.json` 应返回 JSON。
-4. 菜单底部能看到版本号 `v1.1.0`。
+4. 菜单底部能看到版本号 `v1.2.0`。
 
 ---
 
@@ -235,7 +243,7 @@ dsh plugin --profile web remove dsh-shorekeeper-widget                # 卸载
 npm run check     # 语法 + 清单一致性 + 路由 + 资源引用 + 残留品牌词
 npm run smoke     # 宿主半区冒烟：用临时 DSH_HOME 实跑配置读写 / 导出导入 / 旧数据迁移
 npm run mock      # 起一个本地 mock 宿主，浏览器直接看挂件（不用装 DSH）
-npm run pack      # 生成 dist/dsh-shorekeeper-widget-v1.1.0.zip
+npm run pack      # 生成 dist/dsh-shorekeeper-widget-v1.2.0.zip
 ```
 
 `npm run mock` 会在 `http://127.0.0.1:8791` 起一个只监听回环的假宿主，页面里放了一个模拟 composer
